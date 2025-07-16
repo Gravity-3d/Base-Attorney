@@ -14,6 +14,9 @@ const VsAiPage = () => {
   useEffect(() => {
     // Initialize the chat session
     try {
+      if (!process.env.API_KEY) {
+        throw new Error("API_KEY environment variable not found.");
+      }
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       chatRef.current = ai.chats.create({
         model: "gemini-2.5-flash",
@@ -34,7 +37,7 @@ const VsAiPage = () => {
        setDebateHistory([
         {
           speaker: "Error",
-          text: "Failed to initialize the AI. Please check the API key and refresh.",
+          text: "Failed to initialize AI. Please ensure the API_KEY is set correctly in your hosting environment (e.g., Netlify variables) and redeploy your site.",
         },
       ]);
     }
@@ -62,13 +65,23 @@ const VsAiPage = () => {
       console.error("Error sending message:", error);
       const errorMessage = {
         speaker: "Error",
-        text: "The prosecutor seems to be flustered. An error occurred.",
+        text: "The prosecutor seems to be flustered. An error occurred while sending the message.",
       };
       setDebateHistory((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
+  
+  const getSpeakerClass = (speaker: string) => {
+    switch(speaker) {
+        case 'Defense': return 'text-blue-400';
+        case 'Prosecutor': return 'text-red-400';
+        case 'Judge': return 'text-yellow-300';
+        case 'Error': return 'text-orange-500'; // A distinct error color
+        default: return 'text-gray-300';
+    }
+  }
 
   return (
     <>
@@ -86,13 +99,7 @@ const VsAiPage = () => {
         {debateHistory.map((entry, index) => (
           <div key={index} className="mb-4">
             <span
-              className={`font-bold ${
-                entry.speaker === "Defense"
-                  ? "text-blue-400"
-                  : entry.speaker === "Prosecutor"
-                  ? "text-red-400"
-                  : "text-yellow-300"
-              }`}
+              className={`font-bold ${getSpeakerClass(entry.speaker)}`}
             >
               {entry.speaker}:
             </span>{" "}
@@ -114,14 +121,14 @@ const VsAiPage = () => {
           onChange={(e) => setUserInput(e.target.value)}
           className="form-input w-full h-28 resize-none text-lg"
           placeholder="Present your argument..."
-          disabled={isLoading}
+          disabled={isLoading || !chatRef.current}
           aria-label="Your argument"
         />
         <div className="flex justify-between items-center mt-4">
             <button type="button" className="btn text-3xl md:text-5xl !py-4 !px-8 border-red-500 !text-red-500 hover:!border-red-400 hover:!text-red-400" style={{ boxShadow: '6px 6px 0px #5B21B6' }}>
                 OBJECTION!
             </button>
-            <button type="submit" className="btn text-xl md:text-2xl" disabled={isLoading}>
+            <button type="submit" className="btn text-xl md:text-2xl" disabled={isLoading || !chatRef.current}>
                 {isLoading ? "Waiting..." : "Present Argument"}
             </button>
         </div>
