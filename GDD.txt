@@ -1,0 +1,652 @@
+
+
+================================================================================
+
+Objection, Your Honor! - Game Design Document (GDD)
+
+================================================================================
+
+
+
+Version: 0.1 (Tentative)
+
+Date: July 24, 2024
+
+Author: World-Class Senior Frontend Engineer & AI Specialist
+
+
+
+--------------------------------------------------------------------------------
+
+TABLE OF CONTENTS
+
+--------------------------------------------------------------------------------
+
+
+
+1.0  | Introduction & Vision
+
+     | 1.1 High Concept
+
+     | 1.2 Genre
+
+     | 1.3 Target Audience
+
+     | 1.4 Core Pillars
+
+     | 1.5 Unique Selling Propositions (USPs)
+
+
+
+2.0  | Core Gameplay Loop
+
+     | 2.1 The Case
+
+     | 2.2 The Argument Phase
+
+     | 2.3 The Cross-Examination Phase
+
+     | 2.4 The "Objection!" Mechanic
+
+     | 2.5 The Court Record & Evidence
+
+     | 2.6 The Verdict
+
+
+
+3.0  | Game Modes
+
+     | 3.1 Vs. AI (Story Mode)
+
+     | 3.2 Vs. Human (Online Multiplayer)
+
+     | 3.3 Case Maker (User-Generated Content)
+
+     | 3.4 Judge Mode
+
+
+
+4.0  | User Interface (UI) & User Experience (UX)
+
+     | 4.1 Design Philosophy
+
+     | 4.2 Key Screens & Flow
+
+     | 4.3 In-Game HUD
+
+     | 4.4 Accessibility
+
+
+
+5.0  | Art & Audio Design
+
+     | 5.1 Visual Style
+
+     | 5.2 Character Design
+
+     | 5.3 Audio Direction & Music
+
+     | 5.4 Sound Effects (SFX)
+
+
+
+6.0  | Narrative & World-Building
+
+     | 6.1 The Premise
+
+     | 6.2 Key Characters
+
+     | 6.3 Setting: The Court of Mundane Affairs
+
+     | 6.4 Lore & Tone
+
+
+
+7.0  | Player Progression & Metagame
+
+     | 7.1 Player Accounts & Profiles
+
+     | 7.2 Currency & Points System
+
+     | 7.3 Achievements & Unlockables
+
+     | 7.4 Leaderboards & Seasons
+
+
+
+8.0  | Technical Specification
+
+     | 8.1 Frontend Technology
+
+     | 8.2 Backend & AI Integration (Gemini API)
+
+     | 8.3 Database Architecture
+
+     | 8.4 Networking for Multiplayer
+
+
+
+9.0  | Monetization Strategy (Ethical F2P)
+
+     | 9.1 Philosophy
+
+     | 9.2 Revenue Streams
+
+     | 9.3 Anti-Pay-to-Win Commitment
+
+
+
+10.0 | Future Roadmap
+
+     | 10.1 Alpha & Beta Phases
+
+     | 10.2 Full Launch (v1.0)
+
+     | 10.3 Post-Launch Content
+
+
+
+================================================================================
+
+1.0 | INTRODUCTION & VISION
+
+================================================================================
+
+
+
+1.1 High Concept
+
+"Objection, Your Honor!" is a courtroom parody game where players engage in over-the-top, dramatic legal battles against an advanced AI or other players over life's most trivial and mundane questions. It's Phoenix Wright meets Whose Line Is It Anyway?, powered by generative AI.
+
+
+
+1.2 Genre
+
+Primary: Debate, Puzzle, Comedy, Visual Novel
+
+Secondary: Strategy, Competitive Multiplayer
+
+
+
+1.3 Target Audience
+
+- Fans of the Ace Attorney series and other story-driven Japanese games.
+
+- Players who enjoy comedy, parody, and witty dialogue (e.g., fans of The Jackbox Party Pack).
+
+- Casual to mid-core strategy enthusiasts who enjoy logic puzzles and out-thinking an opponent.
+
+- A broad audience (teen to adult) looking for a unique, low-stress, yet intellectually stimulating competitive experience.
+
+
+
+1.4 Core Pillars
+
+1.  **Humor:** The game's foundation is comedy. From the absurdity of the cases to the exaggerated character reactions and witty AI-generated dialogue, every element should serve to entertain and amuse the player.
+
+2.  **Strategy:** Beneath the humor lies a game of logic and tactics. Winning requires players to build a coherent argument, identify fallacies in their opponent's reasoning, and strategically deploy evidence and objections.
+
+3.  **Accessibility:** The game should be easy to learn but hard to master. A simple UI, turn-based gameplay, and clear objectives ensure anyone can pick it up, while deep strategic options and a high skill ceiling provide long-term engagement.
+
+
+
+1.5 Unique Selling Propositions (USPs)
+
+- **Dynamic AI Opponent:** Debate against a powerful generative AI (Gemini) that can argue, reason, and react with distinct, memorable personalities. No two trials are exactly alike.
+
+- **Trivial Topics, Epic Stakes:** Experience the thrill of a high-stakes courtroom battle over questions like "Is a hotdog a sandwich?" or "Should toilet paper roll over or under?".
+
+- **Community-Driven Content:** An intuitive "Case Maker" allows players to create, share, and play an endless supply of user-generated cases, ensuring constant new content.
+
+- **Real-Time Multiplayer Debates:** Go head-to-head with other players in ranked or casual matches to determine who is the ultimate master of mundane litigation.
+
+
+
+================================================================================
+
+2.0 | CORE GAMEPLAY LOOP
+
+================================================================================
+
+
+
+The gameplay is structured into distinct phases, mirroring a stylized courtroom trial.
+
+
+
+2.1 The Case
+
+A trial begins with the Judge presenting the case.
+
+Example: "The court is now in session to rule on the contentious matter of Case #734: Does pineapple belong on pizza? The Prosecution will argue that it is a culinary crime, while the Defense will champion this tropical topping. Let the arguments commence!"
+
+The player chooses to represent either the Prosecution or the Defense.
+
+
+
+2.2 The Argument Phase
+
+The player (and their opponent) delivers an opening statement. This can be done by:
+
+- Selecting from a list of pre-generated argument snippets.
+
+- Typing a custom argument, which the AI will parse for key points.
+
+The goal is to establish a logical (or hilariously illogical) framework for your case.
+
+
+
+2.3 The Cross-Examination Phase
+
+This is the heart of the gameplay. The opponent (AI or human) presents a "witness testimony" (their argument broken into statements). The player reads through this testimony, statement by statement.
+
+- **"PRESS" Mechanic:** The player can press the opponent on any statement. This prompts the opponent to elaborate, potentially revealing more information or a hidden contradiction. Pressing is a low-risk way to fish for weaknesses.
+
+- **"PRESENT" Mechanic:** If the player finds a direct contradiction between a statement and a piece of evidence in their Court Record, they can present it. A successful presentation deals a massive blow to the opponent's "Credibility Gauge."
+
+
+
+2.4 The "Objection!" Mechanic
+
+At any point during the opponent's testimony, the player can hit the "OBJECTION!" button. This is a high-risk, high-reward move.
+
+- **Cost:** Using "OBJECTION!" costs a small amount of the player's own Credibility.
+
+- **Follow-up:** After objecting, the player must immediately either present a piece of contradictory evidence or point out a logical fallacy.
+
+- **Success:** A successful objection stuns the opponent, interrupts their argument, and deals significant damage to their Credibility.
+
+- **Failure:** A failed objection (e.g., presenting irrelevant evidence) results in a penalty, with the Judge admonishing the player for wasting the court's time, leading to a larger Credibility loss.
+
+
+
+2.5 The Court Record & Evidence
+
+Each player has a "Court Record" containing items relevant to the case. This evidence is a mix of absurd diagrams, "expert" testimonies, pseudo-scientific articles, and more.
+
+Example (Pineapple on Pizza case):
+
+- Evidence #1: A diagram showing the Maillard reaction on ham vs. pineapple.
+
+- Evidence #2: "Professor Gastronomy's" article on sweet and savory flavor pairings.
+
+- Evidence #3: A blurry photo of a 17th-century painting allegedly depicting a pineapple on a flatbread.
+
+
+
+2.6 The Verdict
+
+A trial ends when one player's "Credibility Gauge" is depleted. The Judge then delivers a dramatic, often humorous, final verdict. The winning player is showered in confetti as their character strikes a victory pose.
+
+
+
+================================================================================
+
+3.0 | GAME MODES
+
+================================================================================
+
+
+
+3.1 Vs. AI (Story Mode)
+
+A single-player campaign featuring a series of progressively challenging and absurd cases. This mode introduces players to the game's mechanics and a recurring cast of quirky AI prosecutors and witnesses. Each opponent will have a unique debating style and personality, powered by different system instructions for the Gemini API.
+
+
+
+3.2 Vs. Human (Online Multiplayer)
+
+- **Ranked Mode:** Players compete to climb the leaderboards. A matchmaking system (Elo-based) pairs players of similar skill. Winning earns rank points and in-game currency.
+
+- **Casual Mode:** Play for fun against friends or random opponents without the pressure of ranks. This is the perfect place to experiment with bizarre strategies.
+
+
+
+3.3 Case Maker (User-Generated Content)
+
+A user-friendly in-game tool that allows players to create their own cases.
+
+- **Define the Topic:** "Is water wet?"
+
+- **Write Starting Positions:** Arguments for Prosecution and Defense.
+
+- **Create Evidence:** Upload images or write text for items in the Court Record.
+
+- **Share & Play:** Upload finished cases to a community server where others can play and rate them.
+
+
+
+3.4 Judge Mode
+
+Don't want to argue? Be the judge! In this mode, players watch live or recorded Vs. Human matches and vote on who made the better points. Successful judging (voting with the majority) earns a small amount of in-game currency.
+
+
+
+================================================================================
+
+4.0 | USER INTERFACE (UI) & USER EXPERIENCE (UX)
+
+================================================================================
+
+
+
+4.1 Design Philosophy
+
+Pixel-perfect, retro, and responsive. The UI is a core part of the game's identity, drawing heavy inspiration from the 16-bit console era and the Ace Attorney franchise. It must be bold, clear, and satisfying to interact with. Every button press should feel impactful.
+
+
+
+4.2 Key Screens & Flow
+
+- **Splash Screen:** Game logo with a booming "OBJECTION!" sound bite.
+
+- **Main Menu:** The current design is a strong base. Clean, pixel-art buttons for "Vs. AI," "Vs. Human," "Case Maker," and "Options."
+
+- **Login/Account:** The current sign-in page serves as a functional placeholder. This will evolve into a player profile hub, showing stats, achievements, and unlocked cosmetics.
+
+- **Case Select:** A scrolling list of available cases, showing a title, a short description, and community rating (for UGC).
+
+- **Courtroom:** The main gameplay screen.
+
+
+
+4.3 In-Game HUD
+
+- **Top:** Two "Credibility Gauges" (health bars) for the player and opponent, positioned at opposite ends.
+
+- **Center:** The main dialogue box where testimony and conversations appear, with the speaking character's animated portrait next to it.
+
+- **Bottom:** Context-sensitive action buttons ("Press," "Present," etc.) and the main "OBJECTION!" button.
+
+- **Court Record Button:** An icon (a file folder) that slides open the evidence menu when clicked.
+
+
+
+4.4 Accessibility
+
+- **High-Contrast Mode:** A visual option to increase text readability.
+
+- **Font Scaling:** Allow users to increase font size.
+
+- **Full Keyboard & Controller Support:** All actions can be mapped.
+
+- **Screen Reader Compatibility:** UI elements will have ARIA labels.
+
+- **Adjustable Timers:** For multiplayer, offer modes with longer or no timers for players who need more time to think.
+
+
+
+================================================================================
+
+5.0 | ART & AUDIO DESIGN
+
+================================================================================
+
+
+
+5.1 Visual Style
+
+- **Pixel Art:** A high-fidelity 16-bit style. Sprites will be detailed enough for expressive animations.
+
+- **Color Palette:** Vibrant and high-contrast. Each character will have a distinct color scheme. Courtrooms will use more muted tones (wood, stone) to make the characters pop.
+
+- **Effects:** Exaggerated visual effects for impacts, damage, and key moments. Screen shake, dramatic flashes of white, and large, stylized text ("GUILTY!", "NOT GUILTY!") will fill the screen.
+
+
+
+5.2 Character Design
+
+Characters are archetypes turned up to eleven.
+
+- **The Player:** A determined, spiky-haired rookie (customizable gender/appearance).
+
+- **The Judge:** An imposing, bearded old man with a giant gavel and a perpetually sleepy expression that snaps to attention at key moments.
+
+- **Rival Prosecutors:** A cast of memorable opponents, like the icy logician who adjusts his glasses, or the passionate, desk-slamming brute. Each will have a suite of animations: thinking, confident, sweating, shocked, and defeated.
+
+
+
+5.3 Audio Direction & Music
+
+- **Soundtrack:** Chiptune/Synthwave fusion. The music must be dynamic and reactive.
+
+- **Key Tracks:**
+
+    - "Lobby Theme": A calm, jazzy tune.
+
+    - "Cross-Examination": A tense, looping track that builds in intensity.
+
+    - "Cornered": A fast-paced, dramatic theme for when an opponent is about to break.
+
+    - "Victory": An upbeat, triumphant anthem.
+
+
+
+5.4 Sound Effects (SFX)
+
+Crisp, crunchy, and satisfying retro SFX.
+
+- **Voice Clips:** The most important SFX. High-quality, impactful voice clips for "Objection!", "Hold It!", and "Take That!".
+
+- **UI Sounds:** Distinct sounds for text scrolling, button presses, and menu transitions.
+
+- **Action Sounds:** Gavel slams, desk slams, finger points, and evidence "whooshes".
+
+
+
+================================================================================
+
+6.0 | NARRATIVE & WORLD-BUILDING
+
+================================================================================
+
+
+
+6.1 The Premise
+
+In a world oversaturated with pointless online arguments, a global governing body established the "Supreme Court of Mundane Affairs" to bring order to chaos. Here, the internet's most trivial disputes are settled with the full, dramatic weight of the law.
+
+
+
+6.2 Key Characters
+
+- **Phoenix Wrong (Player Archetype):** A new defense attorney with a strong sense of justice for the absurd.
+
+- **Judge Gavelton:** An ancient judge who has presided over the court since its inception. He values passion and drama over actual logic.
+
+- **Miles Endworth (Rival Prosecutor):** An impeccably logical and smug prosecutor who believes every issue can be resolved with data, no matter how trivial. He is the player's primary rival.
+
+- **Recurring Witnesses:** A cast of bizarre characters who serve as "experts" in the cases, such as a "Cereal Sommelier" or a "Cat Behavior Psychologist."
+
+
+
+6.3 Setting: The Court of Mundane Affairs
+
+The main courtroom is a grand, wood-paneled hall. However, special cases might take place in other settings, like a "Food Courtroom" for culinary disputes or a "Digital Courtroom" for tech arguments.
+
+
+
+6.4 Lore & Tone
+
+The tone is satirical and self-aware. The game pokes fun at legal dramas and the nature of online discourse. The lore consists of legendary past cases (e.g., "The People v. GIF Pronunciation") and famous lawyers who are revered for their skills in arguing nonsense.
+
+
+
+================================================================================
+
+7.0 | PLAYER PROGRESSION & METAGAME
+
+================================================================================
+
+
+
+7.1 Player Accounts & Profiles
+
+The sign-in system is the entry point. A full player profile will track:
+
+- Win/Loss Record (Overall, Ranked, Casual)
+
+- Favorite Case Topics
+
+- Most Used Piece of Evidence
+
+- Key Achievements & Titles
+
+- Customizable player avatar and banner.
+
+
+
+7.2 Currency & Points System
+
+- **Barrister Points (BP):** The main free currency, earned by playing and winning matches. Used to unlock standard cosmetics and new UGC case slots.
+
+- **Gavel Gold (GG):** The premium currency, purchasable with real money. Used exclusively for premium cosmetic items. It offers no competitive advantage.
+
+
+
+7.3 Achievements & Unlockables
+
+- **Achievements:** Hundreds of achievements for in-game feats (e.g., "Perfect Trial," "Five Objections, One Case," "The Rebutter"). Achievements can grant titles for the player's profile.
+
+- **Unlockables:**
+
+    - Cosmetics: Outfits, custom "Objection!" bubbles, courtroom themes, character skins.
+
+    - New AI Opponents for practice mode.
+
+
+
+7.4 Leaderboards & Seasons
+
+- **Leaderboards:** Track top players in Ranked Mode (Global, Regional, Friends).
+
+- **Seasons:** Ranked mode will operate in seasons (e.g., 3 months). At the end of a season, ranks are partially reset, and players earn rewards based on their peak rank. Each season will introduce a new set of cosmetic items.
+
+
+
+================================================================================
+
+8.0 | TECHNICAL SPECIFICATION
+
+================================================================================
+
+
+
+8.1 Frontend Technology
+
+- **Framework:** React with TypeScript for managing complex game states and UI components.
+
+- **Styling:** Tailwind CSS for rapid and responsive layout design.
+
+- **Rendering:** HTML5 Canvas for dynamic in-game elements and animations if performance requires it, otherwise DOM manipulation.
+
+
+
+8.2 Backend & AI Integration (Gemini API)
+
+The Gemini API is the brain of the game's AI.
+
+- **AI Personality:** The `systemInstruction` parameter will be heavily used to define the AI opponent's personality, tone, and logical framework. `Example: "You are a dramatic, over-the-top prosecutor. You believe cats are superior to dogs. Your arguments should be filled with emotional appeals and flowery language. Never concede a point."`
+
+- **Argument Generation:** `ai.models.generateContent` will create the AI's arguments and testimony based on the case and the flow of the trial.
+
+- **Argument Analysis:** A key challenge. The AI will analyze the player's typed arguments and objections. Using a prompt with `responseMimeType: "application/json"`, we can ask the model to check for contradictions against the trial's history. `Example prompt: "Analyze this statement for contradictions with the provided chat history. Respond in JSON with {'is_contradiction': boolean, 'explanation': '...'}"`
+
+- **API Management:** Implement robust error handling, request throttling, and caching to manage API costs and ensure smooth gameplay.
+
+
+
+8.3 Database Architecture
+
+- **Initial:** The current mock `db.ts` is for prototyping only.
+
+- **Production:** A scalable BaaS (Backend as a Service) solution like Firebase Firestore or Supabase.
+
+    - **Collections:** `users` (auth data, profile info), `cases` (official and user-generated cases), `matches` (history of multiplayer games).
+
+
+
+8.4 Networking for Multiplayer
+
+- **Signaling:** WebSockets for real-time communication between players in a match.
+
+- **Server Authority:** A server-authoritative model where the backend validates all game actions to prevent cheating. Player A sends "Present Evidence X" -> Server validates -> Server tells Player B what happened.
+
+
+
+================================================================================
+
+9.0 | MONETIZATION STRATEGY (Ethical F2P)
+
+================================================================================
+
+
+
+9.1 Philosophy
+
+The core gameplay experience must be free and accessible to all. Monetization will be 100% optional and focused on cosmetics, allowing players to support the game while not creating a "pay-to-win" environment.
+
+
+
+9.2 Revenue Streams
+
+- **Cosmetic Shop:** Direct purchase of cosmetic items (outfits, UI themes, etc.) using premium currency (Gavel Gold).
+
+- **Seasonal Battle Pass:** A "Court Reporter's Pass" with free and premium tiers. Players unlock rewards by playing the game and earning BP. The premium track offers more exclusive cosmetic items.
+
+
+
+9.3 Anti-Pay-to-Win Commitment
+
+It will be impossible to buy a gameplay advantage. Currency cannot be used to:
+
+- Reveal contradictions.
+
+- Strengthen arguments.
+
+- Get more Credibility.
+
+- Unlock more powerful AI opponents (they are unlocked via gameplay).
+
+
+
+================================================================================
+
+10.0 | FUTURE ROADMAP
+
+================================================================================
+
+
+
+10.1 Alpha & Beta Phases (Next 3-6 Months)
+
+- **Closed Alpha:** Focus on core gameplay loop (Vs. AI, basic Vs. Human). Invite-only. Gather feedback on game balance and fun factor.
+
+- **Open Beta:** Implement player accounts, progression, and the Case Maker tool. Stress-test servers and matchmaking.
+
+
+
+10.2 Full Launch (v1.0) (6-9 Months)
+
+- Full release with the complete Story Mode (Chapter 1).
+
+- Launch of the Cosmetic Shop and the first Seasonal Pass.
+
+- Ranked leaderboards go live.
+
+
+
+10.3 Post-Launch Content (The First Year)
+
+- **New Story Chapters:** Continue the adventures of the player character.
+
+- **New AI Opponents:** Introduce new rivals with unique mechanics.
+
+- **Team Battles:** 2v2 debate mode.
+
+- **Special Events:** Time-limited cases based on holidays or pop culture events.
+
+- **Voice Integration (Experimental):** Use voice-to-text to allow players to speak their arguments and literally shout "Objection!".
+
+- **Mobile Port:** A dedicated version for iOS and Android with a touch-friendly UI.
+

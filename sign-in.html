@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html lang=""en">
+
+  <head>
+
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Sign In - Objection, Your Honor!</title>title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+
+      rel="stylesheet"
+
+    />
+
+    <style>
+
+      body {
+
+        font-family: "Press Start 2P", cursive;
+
+        background-color: #1a202c;
+
+        color: white;
+
+      }
+
+      .btn {
+
+        display: inline-block;
+
+        padding: 1rem 2rem;
+
+        border: 4px solid #ffffff;
+
+        background-color: #2d3748;
+
+        color: #ffffff;
+
+        text-decoration: none;
+
+        text-align: center;
+
+        transition: all 0.2s ease-in-out;
+
+        text-transform: uppercase;
+
+        box-shadow: 6px 6px 0px #000000;
+
+      }
+
+      .btn:hover, .btn:focus-visible {
+
+        background-color: #4a5568;
+
+        border-color: #fde047;
+
+        color: #fde047;
+
+        transform: translate(2px, 2px);
+
+        box-shadow: 4px 4px 0px #000000;
+
+      }
+
+       .btn:active {
+
+        transform: translate(6px, 6px);
+
+        box-shadow: none;
+
+      }
+
+      .btn-sm {
+
+        padding: 0.5rem 1rem;
+
+        border-width: 2px;
+
+        box-shadow: 4px 4px 0px #000000;
+
+      }
+
+      .btn-sm:hover, .btn-sm:focus-visible {
+
+        box-shadow: 2px 2px 0px #000000;
+
+      }
+
+      .btn-sm:active {
+
+        box-shadow: none;
+
+      }
+
+      .title-text {
+
+        text-shadow: 6px 6px 0 #000;
+
+        color: #fde047;
+
+      }
+
+      .form-input {
+
+        background-color: #2d3748;
+
+        border: 2px solid #4a5568;
+
+        color: white;
+
+        padding: 0.75rem 1rem;
+
+        width: 100%;
+
+        outline: none;
+
+      }
+
+      .form-input:focus {
+
+        border-color: #fde047;
+
+      }
+
+      .form-container {
+
+        border: 4px solid white;
+
+        padding: 2rem;
+
+        background-color: #2d3748;
+
+        box-shadow: 8px 8px 0px #000000;
+
+      }
+
+    </style>
+
+  </head>head>
+
+  <body class="flex flex-col min-h-screen">
+
+     <header class="p-4 md:p-6">
+
+      <nav>
+
+        <a href="/" class="btn btn-sm">Back to Main Menu</a>a>
+
+      </nav>nav>
+
+    </header>header>
+
+
+
+    <main
+
+      class="flex-grow flex flex-col items-center justify-center text-center p-4"
+
+    >
+
+        <div class="w-full max-w-md form-container">
+
+            <h1 class="text-3xl md:text-4xl font-bold mb-8 title-text">
+
+                Player Sign In
+
+            </h1>h1>
+
+            <form id="sign-in-form" class="space-y-6">
+
+                <div>
+
+                    <label for="email" class="block text-left mb-2 text-sm uppercase">Email</label>label>
+
+                    <input type="email" id="email" name="email" class="form-input" required />
+
+                </div>div>
+
+                <div>
+
+                    <label for="password" class="block text-left mb-2 text-sm uppercase">Password</label>label>
+
+                    <input type="password" id="password" name="password" class="form-input" required />
+
+                </div>div>
+
+                <button type="submit" class="btn w-full !mt-10">Sign In</button>button>
+
+            </form>form>
+
+            <p id="error-message" class="text-red-400 mt-4 text-sm"></p>p>
+
+        </div>div>
+
+    </main>main>
+
+
+
+    <footer class="text-center p-4 text-xs text-gray-500">
+
+        <p>&copy; 2024 Your Honor Games. All Rights Reserved.</p>p>
+
+    </footer>footer>
+
+    <script type="module" src="/sign-in.tsx"></script>
+
+  </body>body>
+
+</html>html></script></p></footer></p></button></label></div></label></div></form></h1></div></main></a></nav></header></body></style></script></title></head></html>"
