@@ -150,14 +150,12 @@ const VsAiPage = () => {
   );
 };
 
-if (window.location.pathname.endsWith('/vs-ai.html')) {
-    const container = document.getElementById('root');
-    if (container) {
-        const root = ReactDOM.createRoot(container);
-        root.render(
-            React.createElement(React.StrictMode, null, 
-                React.createElement(VsAiPage)
-            )
-        );
-    }
+const container = document.getElementById('root');
+if (container) {
+    const root = ReactDOM.createRoot(container);
+    root.render(
+        React.createElement(React.StrictMode, null, 
+            React.createElement(VsAiPage)
+        )
+    );
 }
