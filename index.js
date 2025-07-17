@@ -1,23 +1,33 @@
-
-
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
 import { GoogleGenAI } from "@google/genai";
+
+// A placeholder API key.
+// IMPORTANT: Replace this with your actual API key.
+// For production, it is strongly recommended to use environment variables
+// to avoid exposing your key in the client-side code.
+const API_KEY = 652472838649;
+
 
 const VsAiPage = () => {
   const [debateHistory, setDebateHistory] = useState([]);
   const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const chatRef = useRef(null);
   const dialogueEndRef = useRef(null);
 
   const TOPIC = "Is a hot dog a sandwich?";
 
   useEffect(() => {
-    // The execution environment is expected to provide the API_KEY.
-    // We will initialize the chat directly, assuming the key is available.
+    if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE") {
+        setError("Please replace 'YOUR_API_KEY_HERE' in the index.js file with your actual Google AI API key.");
+        setDebateHistory([]);
+        return;
+    }
+
     try {
-      const ai = new GoogleGenAI({ apiKey: 652472838649 });
+      const ai = new GoogleGenAI({ apiKey: API_KEY });
       chatRef.current = ai.chats.create({
         model: "gemini-2.5-flash",
         config: {
@@ -32,15 +42,10 @@ const VsAiPage = () => {
           text: `Court is now in session. Today's topic: ${TOPIC}`,
         },
       ]);
-    } catch (error) {
-        console.error("AI Initialization Error:", error);
-        setDebateHistory((prevHistory) => [
-            ...(prevHistory.length ? prevHistory : []),
-            {
-                speaker: "System Alert",
-                text: "Could not connect to the AI. The application's API_KEY is missing or invalid in this environment. Please ensure the hosting service (like Netlify or Vercel) is configured to expose the API_KEY environment variable to the client-side browser scripts.",
-            },
-        ]);
+      setError(null);
+    } catch (e) {
+        console.error("AI Initialization Error:", e);
+        setError("An unexpected error occurred during AI initialization.");
     }
   }, []);
 
@@ -59,14 +64,14 @@ const VsAiPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await chatRef.current.sendMessage({ message: userInput });
+      const response = await chatRef.current.sendMessage(userInput);
       const aiMessage = { speaker: "Prosecutor", text: response.text };
       setDebateHistory((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage = {
-        speaker: "Error",
-        text: "The prosecutor seems to be flustered. An error occurred while sending the message.",
+        speaker: "System Alert",
+        text: "The API call failed. This is likely due to an invalid or disabled API key. Please verify your key is correct and has the Gemini API enabled in your Google AI Studio dashboard.",
       };
       setDebateHistory((prev) => [...prev, errorMessage]);
     } finally {
@@ -89,6 +94,15 @@ const VsAiPage = () => {
         return "text-gray-300";
     }
   };
+  
+  if (error) {
+    return React.createElement('div', { className: "text-center w-full max-w-4xl" },
+        React.createElement('h2', { className: "text-2xl md:text-3xl font-bold mb-6 text-center title-text", style: { textShadow: '4px 4px 0 #000' } }, "Configuration Needed"),
+        React.createElement('div', { className: "w-full h-auto bg-gray-900 bg-opacity-75 border-4 border-white p-6 text-lg md:text-xl leading-relaxed" },
+            React.createElement('p', { className: "text-orange-500 font-bold" }, error)
+        )
+    );
+  }
 
   return React.createElement(React.Fragment, null,
     React.createElement('h2', {
