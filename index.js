@@ -13,11 +13,9 @@ const VsAiPage = () => {
   const TOPIC = "Is a hot dog a sandwich?";
 
   useEffect(() => {
-    // Initialize the chat session
+    // The execution environment is expected to provide the API_KEY.
+    // We will initialize the chat directly, assuming the key is available.
     try {
-      if (!process.env.API_KEY) {
-        throw new Error("API_KEY environment variable not found.");
-      }
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       chatRef.current = ai.chats.create({
         model: "gemini-2.5-flash",
@@ -34,13 +32,14 @@ const VsAiPage = () => {
         },
       ]);
     } catch (error) {
-      console.error("Error initializing AI chat:", error);
-      setDebateHistory([
-        {
-          speaker: "Error",
-          text: "Failed to initialize AI. Please ensure the API_KEY is set correctly in your hosting environment (e.g., Netlify variables) and redeploy your site.",
-        },
-      ]);
+        console.error("Error initializing AI chat:", error);
+        setDebateHistory((prevHistory) => [
+            ...(prevHistory.length ? prevHistory : []),
+            {
+                speaker: "Error",
+                text: "The connection to the prosecutor's office could not be established. Please check your configuration.",
+            },
+        ]);
     }
   }, []);
 
