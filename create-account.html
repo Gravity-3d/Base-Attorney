@@ -29,16 +29,20 @@
         text-transform: uppercase;
         box-shadow: 6px 6px 0px #000000;
       }
-      .btn:hover, .btn:focus-visible {
+      .btn:hover:not(:disabled), .btn:focus-visible:not(:disabled) {
         background-color: #4a5568;
         border-color: #fde047;
         color: #fde047;
         transform: translate(2px, 2px);
         box-shadow: 4px 4px 0px #000000;
       }
-       .btn:active {
+       .btn:active:not(:disabled) {
         transform: translate(6px, 6px);
         box-shadow: none;
+      }
+      .btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
       }
       .btn-sm {
         padding: 0.5rem 1rem;
@@ -91,7 +95,7 @@
       </h1>
 
       <div class="form-container w-full max-w-md">
-        <form class="flex flex-col space-y-6 text-left text-sm md:text-base">
+        <form id="create-account-form" class="flex flex-col space-y-6 text-left text-sm md:text-base">
           <div>
             <label for="username">Username</label>
             <input type="text" id="username" name="username" class="form-input" required />
@@ -102,7 +106,7 @@
           </div>
           <div>
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" class="form-input" required />
+            <input type="password" id="password" name="password" class="form-input" required minlength="6" />
           </div>
           <div>
             <label for="confirm-password">Confirm Password</label>
@@ -110,6 +114,7 @@
           </div>
           <button type="submit" class="btn text-lg md:text-xl mt-4">Create</button>
         </form>
+         <p id="form-message" class="mt-4 text-center h-4 text-sm"></p>
       </div>
 
       <p class="mt-8 text-sm">
@@ -120,5 +125,56 @@
     <footer class="text-center p-4 text-xs text-gray-500">
         <p>&copy; 2024 Your Honor Games. All Rights Reserved.</p>
     </footer>
+
+    <script src="db.js"></script>
+    <script>
+      const form = document.getElementById('create-account-form');
+      const messageEl = document.getElementById('form-message');
+      const submitButton = form.querySelector('button[type="submit"]');
+
+      form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          submitButton.disabled = true;
+          submitButton.textContent = 'Creating...';
+
+          messageEl.textContent = '';
+          messageEl.classList.remove('text-green-400', 'text-red-400');
+          
+          const username = form.username.value;
+          const email = form.email.value;
+          const password = form.password.value;
+          const confirmPassword = form['confirm-password'].value;
+          
+          if (password !== confirmPassword) {
+              messageEl.textContent = "Passwords do not match!";
+              messageEl.classList.add('text-red-400');
+              submitButton.disabled = false;
+              submitButton.textContent = 'Create';
+              return;
+          }
+
+          if (password.length < 6) {
+              messageEl.textContent = "Password must be at least 6 characters.";
+              messageEl.classList.add('text-red-400');
+              submitButton.disabled = false;
+              submitButton.textContent = 'Create';
+              return;
+          }
+
+          const result = await createUser(username, email, password);
+          messageEl.textContent = result.message;
+
+          if (result.success) {
+              messageEl.classList.add('text-green-400');
+              setTimeout(() => {
+                  window.location.href = '/sign-in.html';
+              }, 1500);
+          } else {
+              messageEl.classList.add('text-red-400');
+              submitButton.disabled = false;
+              submitButton.textContent = 'Create';
+          }
+      });
+    </script>
   </body>
 </html>

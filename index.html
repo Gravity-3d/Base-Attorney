@@ -70,7 +70,8 @@
   <body class="flex flex-col min-h-screen">
     <!-- Top Left Navigation -->
     <header class="p-4 md:p-6">
-      <nav class="flex gap-4">
+      <nav id="main-nav" class="flex gap-4 items-center">
+        <!-- Populated by script -->
         <a href="/create-account.html" class="btn btn-sm">Create Account</a>
         <a href="/sign-in.html" class="btn btn-sm">Sign In</a>
       </nav>
@@ -96,5 +97,30 @@
     <footer class="text-center p-4 text-xs text-gray-500">
         <p>&copy; 2024 Your Honor Games. All Rights Reserved.</p>
     </footer>
+
+    <script src="db.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nav = document.getElementById('main-nav');
+            const user = getCurrentUser();
+            
+            if (user) {
+                nav.innerHTML = `
+                    <span class="text-yellow-300 text-sm md:text-base self-center" style="text-shadow: 2px 2px 0 #000;">Welcome, ${user.username}</span>
+                    <button id="sign-out-btn" class="btn btn-sm">Sign Out</button>
+                `;
+                const signOutBtn = document.getElementById('sign-out-btn');
+                signOutBtn.addEventListener('click', () => {
+                    signOutUser();
+                    window.location.reload();
+                });
+            } else {
+                nav.innerHTML = `
+                    <a href="/create-account.html" class="btn btn-sm">Create Account</a>
+                    <a href="/sign-in.html" class="btn btn-sm">Sign In</a>
+                `;
+            }
+        });
+    </script>
   </body>
 </html>

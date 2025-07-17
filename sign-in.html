@@ -29,16 +29,20 @@
         text-transform: uppercase;
         box-shadow: 6px 6px 0px #000000;
       }
-      .btn:hover, .btn:focus-visible {
+      .btn:hover:not(:disabled), .btn:focus-visible:not(:disabled) {
         background-color: #4a5568;
         border-color: #fde047;
         color: #fde047;
         transform: translate(2px, 2px);
         box-shadow: 4px 4px 0px #000000;
       }
-       .btn:active {
+       .btn:active:not(:disabled) {
         transform: translate(6px, 6px);
         box-shadow: none;
+      }
+      .btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
       }
       .btn-sm {
         padding: 0.5rem 1rem;
@@ -91,7 +95,7 @@
       </h1>
 
       <div class="form-container w-full max-w-md">
-        <form class="flex flex-col space-y-6 text-left text-sm md:text-base">
+        <form id="sign-in-form" class="flex flex-col space-y-6 text-left text-sm md:text-base">
           <div>
             <label for="email">Email</label>
             <input type="email" id="email" name="email" class="form-input" required />
@@ -102,15 +106,49 @@
           </div>
           <button type="submit" class="btn text-lg md:text-xl mt-4">Sign In</button>
         </form>
+        <p id="form-message" class="mt-4 text-center h-4 text-sm"></p>
       </div>
 
       <p class="mt-8 text-sm">
-        Don't have an account? <a href="/create-account.html" class="text-yellow-300 hover:underline">Create One</a>
+        Need an account? <a href="/create-account.html" class="text-yellow-300 hover:underline">Create One</a>
       </p>
     </main>
 
     <footer class="text-center p-4 text-xs text-gray-500">
         <p>&copy; 2024 Your Honor Games. All Rights Reserved.</p>
     </footer>
+
+    <script src="db.js"></script>
+    <script>
+      const form = document.getElementById('sign-in-form');
+      const messageEl = document.getElementById('form-message');
+      const submitButton = form.querySelector('button[type="submit"]');
+
+      form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          submitButton.disabled = true;
+          submitButton.textContent = 'Signing In...';
+
+          messageEl.textContent = '';
+          messageEl.classList.remove('text-green-400', 'text-red-400');
+          
+          const email = form.email.value;
+          const password = form.password.value;
+
+          const result = await signInUser(email, password);
+          messageEl.textContent = result.message;
+
+          if (result.success) {
+              messageEl.classList.add('text-green-400');
+              setTimeout(() => {
+                  window.location.href = '/';
+              }, 1500);
+          } else {
+              messageEl.classList.add('text-red-400');
+              submitButton.disabled = false;
+              submitButton.textContent = 'Sign In';
+          }
+      });
+    </script>
   </body>
 </html>
