@@ -3,10 +3,9 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
 import { GoogleGenAI } from "@google/genai";
 
-// A placeholder API key.
-// IMPORTANT: Replace this with your actual API key.
-// For production, it is strongly recommended to use environment variables
-// to avoid exposing your key in the client-side code.
+// This is a placeholder for the API key.
+// For this application to work, you must replace "YOUR_API_KEY_HERE"
+// with a valid API key from Google AI Studio.
 const API_KEY = "AIzaSyAUmC9UftOENS_Rl-o9_AqPwHPmTuUb2zE";
 
 
@@ -22,7 +21,7 @@ const VsAiPage = () => {
 
   useEffect(() => {
     if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE") {
-        setError("Please replace 'YOUR_API_KEY_HERE' in the index.js file with your actual Google AI API key.");
+        setError("Configuration Needed: Open 'index.js' and replace 'YOUR_API_KEY_HERE' with your actual API key. You are correct, the key must be placed inside the quotation marks to be a valid string.");
         setDebateHistory([]);
         return;
     }
@@ -33,7 +32,7 @@ const VsAiPage = () => {
         model: "gemini-2.5-flash",
         config: {
           systemInstruction:
-            "You are a ruthless, cunning, and slightly dramatic prosecutor in a courtroom parody game. Your name is Miles Edgeworth. The user is the defense attorney. You are debating a mundane topic. Your goal is to counter the user's arguments with sharp logic and flair. Keep your responses dramatic, in character, and relatively short (2-4 sentences). Never break character.",
+            "You are a ruthless, cunning, and slightly dramatic prosecutor in a courtroom parody game. Your name is Miles Edgeworth. The user is the defense attorney. You are debating a mundane topic. Your goal is to counter the user's arguments with sharp logic and flair. Keep your responses dramatic, in character, and relatively short (2-4 sentences). Never break character. If the user says 'OBJECTION!', you must react to their interruption, re-evaluating your last statement or countering their objection with dramatic flair.",
         },
       });
 
@@ -55,17 +54,10 @@ const VsAiPage = () => {
     dialogueEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [debateHistory]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!userInput.trim() || isLoading || !chatRef.current) return;
-
-    const userMessage = { speaker: "Defense", text: userInput };
-    setDebateHistory((prev) => [...prev, userMessage]);
-    setUserInput("");
+  const handleAiResponse = async (prompt) => {
     setIsLoading(true);
-
     try {
-      const response = await chatRef.current.sendMessage({ message: userInput });
+      const response = await chatRef.current.sendMessage({ message: prompt });
       const aiMessage = { speaker: "Prosecutor", text: response.text };
       setDebateHistory((prev) => [...prev, aiMessage]);
     } catch (error) {
@@ -78,6 +70,35 @@ const VsAiPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!userInput.trim() || isLoading || !chatRef.current) return;
+
+    const userMessage = { speaker: "Defense", text: userInput };
+    setDebateHistory((prev) => [...prev, userMessage]);
+    const prompt = userInput;
+    setUserInput("");
+    await handleAiResponse(prompt);
+  };
+
+  const handleObjection = async () => {
+    if (isLoading || !chatRef.current) return;
+
+    // An objection is most effective against the prosecutor's last statement.
+    const lastSpeaker = debateHistory[debateHistory.length - 1]?.speaker;
+    if (lastSpeaker !== 'Prosecutor') {
+        // Optional: Add a message that you can't object to yourself or the judge.
+        const tempMessage = { speaker: "Judge", text: "You can't object right now!" };
+        setDebateHistory(prev => [...prev, tempMessage]);
+        setTimeout(() => setDebateHistory(prev => prev.slice(0, -1)), 2000);
+        return;
+    }
+    
+    const objectionMessage = { speaker: "Defense", text: "OBJECTION!" };
+    setDebateHistory((prev) => [...prev, objectionMessage]);
+    await handleAiResponse("OBJECTION! I challenge your last statement. Re-evaluate your position or counter my objection with dramatic flair.");
   };
 
   const getSpeakerClass = (speaker) => {
@@ -153,13 +174,15 @@ const VsAiPage = () => {
         React.createElement('div', { className: "flex justify-between items-center mt-4" },
             React.createElement('button', {
                 type: "button",
+                onClick: handleObjection,
                 className: "btn text-3xl md:text-5xl !py-4 !px-8 border-red-500 !text-red-500 hover:!border-red-400 hover:!text-red-400",
-                style: { boxShadow: '6px 6px 0px #5B21B6' }
+                style: { boxShadow: '6px 6px 0px #5B21B6' },
+                disabled: isLoading || !chatRef.current
             }, "OBJECTION!"),
             React.createElement('button', {
                 type: "submit",
                 className: "btn text-xl md:text-2xl",
-                disabled: isLoading || !chatRef.current
+                disabled: isLoading || !userInput.trim() || !chatRef.current
             }, isLoading ? "Waiting..." : "Present Argument")
         )
     )
