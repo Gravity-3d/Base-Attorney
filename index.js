@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
 import { GoogleGenAI } from "@google/genai";
@@ -6,7 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 // IMPORTANT: Replace this with your actual API key.
 // For production, it is strongly recommended to use environment variables
 // to avoid exposing your key in the client-side code.
-const API_KEY = 652472838649;
+const API_KEY = "652472838649";
 
 
 const VsAiPage = () => {
@@ -64,7 +65,7 @@ const VsAiPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await chatRef.current.sendMessage(userInput);
+      const response = await chatRef.current.sendMessage({ message: userInput });
       const aiMessage = { speaker: "Prosecutor", text: response.text };
       setDebateHistory((prev) => [...prev, aiMessage]);
     } catch (error) {
