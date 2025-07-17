@@ -16,7 +16,7 @@ const VsAiPage = () => {
     // The execution environment is expected to provide the API_KEY.
     // We will initialize the chat directly, assuming the key is available.
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY1 });
       chatRef.current = ai.chats.create({
         model: "gemini-2.5-flash",
         config: {
