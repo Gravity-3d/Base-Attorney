@@ -7,7 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 // IMPORTANT: Replace this with your actual API key.
 // For production, it is strongly recommended to use environment variables
 // to avoid exposing your key in the client-side code.
-const API_KEY = "AIzaSyBtE6xI_hILyFBlwg6vCTu4eUasjYsWQBc";
+const API_KEY = "AIzaSyAUmC9UftOENS_Rl-o9_AqPwHPmTuUb2zE";
 
 
 const VsAiPage = () => {
