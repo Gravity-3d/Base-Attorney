@@ -37,7 +37,7 @@ const VsAiPage = () => {
             ...(prevHistory.length ? prevHistory : []),
             {
                 speaker: "Error",
-                text: "The connection to the prosecutor's office could not be established. Please check your configuration.",
+                text: "The connection to the prosecutor's office failed. This is likely due to a missing API Key in the application's environment configuration.",
             },
         ]);
     }
