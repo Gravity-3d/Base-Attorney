@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
 import { GoogleGenAI } from "@google/genai";
@@ -32,12 +33,12 @@ const VsAiPage = () => {
         },
       ]);
     } catch (error) {
-        console.error("Error initializing AI chat:", error);
+        console.error("AI Initialization Error:", error);
         setDebateHistory((prevHistory) => [
             ...(prevHistory.length ? prevHistory : []),
             {
-                speaker: "Error",
-                text: "The connection to the prosecutor's office failed. This is likely due to a missing API Key in the application's environment configuration.",
+                speaker: "System Alert",
+                text: "Could not connect to the AI. The application's API_KEY is missing or invalid in this environment. Please ensure the hosting service (like Netlify or Vercel) is configured to expose the API_KEY environment variable to the client-side browser scripts.",
             },
         ]);
     }
@@ -81,8 +82,9 @@ const VsAiPage = () => {
         return "text-red-400";
       case "Judge":
         return "text-yellow-300";
+      case "System Alert":
       case "Error":
-        return "text-orange-500"; // A distinct error color
+        return "text-orange-500";
       default:
         return "text-gray-300";
     }
