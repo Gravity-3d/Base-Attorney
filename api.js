@@ -78,15 +78,26 @@ async function fetchApi(endpoint, method, body, token) {
 
   try {
     const response = await fetch(endpoint, options);
-    const data = await response.json();
-
-    if (!response.ok) {
-      // Use the error message from the API response if available, otherwise use a default.
-      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    
+    // Check if the response is JSON before trying to parse it.
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await response.json();
+        if (!response.ok) {
+            // Use the error message from the API response if available, otherwise use a default.
+            throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        }
+        return data;
+    } else {
+        // If not JSON, it's likely an HTML error page from the server function crashing.
+        const text = await response.text();
+        console.error("Non-JSON response from server:", text);
+        throw new Error(`Server returned a non-JSON response. Status: ${response.status}. Check Netlify function logs for endpoint ${endpoint}.`);
     }
-    return data;
+
   } catch (error) {
-    console.error(`API call to ${endpoint} failed:`, error);
+    // This will catch both network errors and the errors we throw above.
+    console.error(`API call to ${endpoint} failed:`, error.message);
     // Re-throw to be caught by the calling function, which can then update the UI.
     throw error;
   }
