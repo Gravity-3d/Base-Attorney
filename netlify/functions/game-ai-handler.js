@@ -1,6 +1,6 @@
 const { GoogleGenAI } = require("@google/genai");
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = "AIzaSyAUmC9UftOENS_Rl-o9_AqPwHPmTuUb2zE";
 exports.handler = async (event) => {
   // 1. Stricter method check
   if (event.httpMethod !== 'POST') {
