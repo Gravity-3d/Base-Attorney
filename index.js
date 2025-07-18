@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 // This is a placeholder for the API key.
 // For this application to work, you must replace "YOUR_API_KEY_HERE"
 // with a valid API key from Google AI Studio.
-const API_KEY = "YOUR_API_KEY_HERE";
+const API_KEY = "AIzaSyAUmC9UftOENS_Rl-o9_AqPwHPmTuUb2zE";
 
 
 const VsAiPage = () => {
