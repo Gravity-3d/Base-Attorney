@@ -78,6 +78,51 @@
         background-color: #2d3748;
         cursor: not-allowed;
       }
+
+      /* Objection Animation Styles */
+      .objection-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        pointer-events: none;
+        background-color: rgba(0,0,0,0.3);
+        opacity: 0;
+        animation: objection-fade-in 0.1s forwards, objection-fade-out 0.5s ease-in 2s forwards;
+      }
+      .objection-text {
+        font-size: clamp(4rem, 20vw, 12rem);
+        font-weight: bold;
+        text-transform: uppercase;
+        animation: objection-shake 0.8s cubic-bezier(.36,.07,.19,.97) both;
+        transform: translate3d(0, 0, 0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+      }
+      .objection-prosecutor {
+        color: #ef4444; /* red-500 */
+        text-shadow: -8px 0 black, 0 8px black, 8px 0 black, 0 -8px black, 6px 6px 10px rgba(0,0,0,0.7);
+      }
+      .objection-defense {
+        color: #3b82f6; /* blue-500 */
+        text-shadow: -8px 0 black, 0 8px black, 8px 0 black, 0 -8px black, 6px 6px 10px rgba(0,0,0,0.7);
+      }
+      @keyframes objection-fade-in {
+        to { opacity: 1; }
+      }
+      @keyframes objection-fade-out {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.8); }
+      }
+      @keyframes objection-shake {
+        10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-1deg); }
+        20%, 80% { transform: translate3d(4px, 0, 0) rotate(1deg); }
+        30%, 50%, 70% { transform: translate3d(-8px, 0, 0) rotate(-2deg); }
+        40%, 60% { transform: translate3d(8px, 0, 0) rotate(2deg); }
+      }
+
     </style>
     <script type="importmap">
     {
@@ -93,7 +138,7 @@
     <!-- Header -->
     <header class="p-4 md:p-6">
       <nav>
-        <a href="/" class="btn btn-sm">Main Menu</a>
+        <a href="/prosecutor-selection.html" class="btn btn-sm">Change Opponent</a>
       </nav>
     </header>
 
