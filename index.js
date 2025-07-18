@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 // This is a placeholder for the API key.
 // For this application to work, you must replace "YOUR_API_KEY_HERE"
 // with a valid API key from Google AI Studio.
-const API_KEY = "AIzaSyAUmC9UftOENS_Rl-o9_AqPwHPmTuUb2zE";
+const API_KEY = "YOUR_API_KEY_HERE";
 
 
 const VsAiPage = () => {
@@ -42,7 +42,7 @@ const VsAiPage = () => {
                 model: "gemini-2.5-flash",
                 config: {
                 systemInstruction:
-                    "You are a ruthless, cunning, and slightly dramatic prosecutor in a courtroom parody game. Your name is Miles Edgeworth. The user is the defense attorney. You are debating a mundane topic. Your goal is to counter the user's arguments with sharp logic and flair. Keep your responses dramatic, in character, and relatively short (2-4 sentences). Never break character. If the user says 'OBJECTION!', you must react to their interruption, re-evaluating your last statement or countering their objection with dramatic flair.",
+                    `You are a ruthless, cunning, and slightly dramatic prosecutor in a courtroom parody game. Your name is Miles Edgeworth. The user is the defense attorney. The debate topic is: "${selectedTopic}". Your goal is to argue against the user's position on this topic with sharp logic and flair. Keep your responses dramatic, in character, and relatively short (2-4 sentences). Never break character. If the user says 'OBJECTION!', you must react to their interruption, re-evaluating your last statement or countering their objection with dramatic flair.`,
                 },
             });
 
