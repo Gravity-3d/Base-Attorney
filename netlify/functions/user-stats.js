@@ -1,3 +1,4 @@
+
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -12,16 +13,6 @@ exports.handler = async (event, context) => {
         };
     }
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-        console.error('Supabase URL or Anon Key is not set.');
-        return {
-            statusCode: 500,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: 'Server configuration error.' }),
-        };
-    }
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
     try {
         const authHeader = event.headers.authorization;
         if (!authHeader) {
@@ -29,7 +20,12 @@ exports.handler = async (event, context) => {
         }
         const token = authHeader.split(' ')[1];
 
-        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+        // Create a user-scoped client to respect RLS
+        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+            global: { headers: { Authorization: `Bearer ${token}` } }
+        });
+
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) {
             console.error('Auth error:', userError);
             return { statusCode: 401, body: JSON.stringify({ error: 'Invalid or expired token.' }) };
@@ -42,6 +38,7 @@ exports.handler = async (event, context) => {
 
         const columnToUpdate = result === 'win' ? 'wins' : 'losses';
 
+        // Use the user-scoped client to call the RPC function
         const { error: rpcError } = await supabase.rpc('increment_stat', {
             user_id_in: user.id,
             stat_column: columnToUpdate
@@ -56,7 +53,8 @@ exports.handler = async (event, context) => {
         }
 
         return { 
-            statusCode: 200, 
+            statusCode: 200,
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: 'Stats updated successfully.' }) 
         };
 
