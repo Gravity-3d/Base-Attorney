@@ -1,82 +1,130 @@
-const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const authGate = document.getElementById('auth-gate');
+const lobbyContent = document.getElementById('lobby-content');
+const usernameDisplay = document.getElementById('username-display');
+const createGameBtn = document.getElementById('create-game-btn');
+const gameListContainer = document.getElementById('game-list');
+const loadingGamesP = document.getElementById('loading-games');
+const errorP = document.getElementById('lobby-error');
 
-const getAuthenticatedUser = async (event) => {
-    const authHeader = event.headers.authorization;
-    if (!authHeader) {
-        throw new Error('Unauthorized: No token provided.');
+let pollingInterval = null;
+let currentUser = null;
+
+const displayError = (message) => {
+    errorP.textContent = message;
+}
+
+const renderGameList = (games) => {
+    if (!games || games.length === 0) {
+        gameListContainer.innerHTML = '<p class="text-gray-400">No open games found. Why not create one?</p>';
+        return;
     }
-    const token = authHeader.split(' ')[1];
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) {
-        throw new Error('Unauthorized: Invalid token.');
+
+    gameListContainer.innerHTML = ''; // Clear previous list
+    let joinableGamesFound = false;
+    games.forEach(game => {
+        // Don't show your own waiting games in the list to join
+        if (game.host_id === currentUser.id) return;
+        joinableGamesFound = true;
+
+        const gameItem = document.createElement('div');
+        gameItem.className = 'game-list-item';
+        gameItem.innerHTML = `
+            <div>
+                <p class="font-bold">${game.host.username}'s Game</p>
+                <p class="text-xs text-gray-400 mt-1">Topic: ${game.topic}</p>
+            </div>
+            <button class="btn btn-sm join-btn" data-game-id="${game.id}">Join</button>
+        `;
+        gameListContainer.appendChild(gameItem);
+    });
+    
+    if (!joinableGamesFound) {
+         gameListContainer.innerHTML = '<p class="text-gray-400">No open games to join. Create one or wait for an opponent.</p>';
     }
-    return user;
+
+    document.querySelectorAll('.join-btn').forEach(button => {
+        button.addEventListener('click', handleJoinGame);
+    });
 };
 
-exports.handler = async (event, context) => {
-    if (event.httpMethod !== 'GET') {
-        return {
-            statusCode: 405,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: 'Method Not Allowed' }),
-        };
+const fetchAndRenderGames = async () => {
+    try {
+        loadingGamesP.textContent = "Loading open games...";
+        const openGames = await window.getOpenGames();
+        renderGameList(openGames);
+    } catch (error) {
+        console.error('Error fetching games:', error);
+        displayError('Could not fetch open games.');
+        loadingGamesP.textContent = "Error loading games.";
     }
+};
+
+const initializeLobby = () => {
+    currentUser = window.getCurrentUser();
+
+    if (!currentUser) {
+        authGate.style.display = 'block';
+        lobbyContent.classList.add('hidden');
+        return;
+    }
+
+    authGate.style.display = 'none';
+    lobbyContent.classList.remove('hidden');
+    usernameDisplay.textContent = currentUser.username;
+
+    // Fetch games immediately and then start polling
+    fetchAndRenderGames();
+    pollingInterval = setInterval(fetchAndRenderGames, 5000);
+};
+
+const handleCreateGame = async () => {
+    createGameBtn.disabled = true;
+    createGameBtn.textContent = 'Creating...';
+    displayError('');
 
     try {
-        const user = await getAuthenticatedUser(event);
-        const gameId = event.queryStringParameters.id;
-
-        if (!gameId) {
-            return {
-                statusCode: 400,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ error: 'Game ID is required.' }),
-            };
+        const newGame = await window.createGame();
+        if (newGame && newGame.id) {
+            window.location.href = `/human-vs-human.html?id=${newGame.id}`;
+        } else {
+            throw new Error("Failed to get a valid game ID from the server.");
         }
-
-        // RLS policy "Players can view their own games." handles security.
-        // We must also join with profiles to get usernames for the UI.
-        const { data: game, error } = await supabase
-            .from('games')
-            .select('*, host:host_id(username), opponent:opponent_id(username)')
-            .eq('id', gameId)
-            .single();
-
-        if (error) {
-            console.error("Supabase fetch error for game state:", error);
-            throw new Error("Game not found or you don't have access.");
-        }
-        
-        if (!game) {
-             throw new Error("Game not found.");
-        }
-
-        // While RLS should prevent this, an extra server-side check is good practice.
-        if (game.host_id !== user.id && game.opponent_id !== user.id) {
-             return {
-                statusCode: 403,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ error: "Forbidden: You are not a player in this game." }),
-            };
-        }
-
-        return {
-            statusCode: 200,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(game),
-        };
-
-    } catch (e) {
-        console.error('Game State Error:', e.message);
-        const statusCode = e.message.startsWith('Unauthorized') ? 401 : 500;
-        return {
-            statusCode: statusCode,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ error: e.message || 'An internal server error occurred.' }),
-        };
+    } catch (error) {
+        console.error('Error creating game:', error);
+        displayError(error.message || 'Could not create game.');
+        createGameBtn.disabled = false;
+        createGameBtn.textContent = 'Create New Game';
     }
 };
+
+const handleJoinGame = async (event) => {
+    const gameId = event.target.getAttribute('data-game-id');
+    event.target.disabled = true;
+    event.target.textContent = 'Joining...';
+    displayError('');
+
+    try {
+        const joinedGame = await window.joinGame(gameId);
+        if (joinedGame && joinedGame.id) {
+            window.location.href = `/human-vs-human.html?id=${joinedGame.id}`;
+        } else {
+             throw new Error("Could not join the game.");
+        }
+    } catch (error) {
+        console.error('Error joining game:', error);
+        displayError(error.message || 'Could not join game. It might have been taken.');
+        // Re-render to update list in case the game was just taken
+        fetchAndRenderGames();
+    }
+};
+
+createGameBtn.addEventListener('click', handleCreateGame);
+initializeLobby();
+
+// Clean up subscription when the user navigates away
+window.addEventListener('beforeunload', () => {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+    }
+});

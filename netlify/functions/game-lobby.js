@@ -35,7 +35,7 @@ exports.handler = async (event) => {
             // --- LIST OPEN GAMES ---
             const { data, error } = await supabase
                 .from('games')
-                .select('id, topic, host_id, host:profiles!games_host_id_fkey(username)')
+                .select('id, topic, host_id, host:profiles!host_id(username)')
                 .eq('status', 'waiting')
                 .order('created_at', { ascending: false });
 
