@@ -1,0 +1,15 @@
+{
+  "name": "objection-your-honor-game",
+  "version": "1.0.0",
+  "description": "A courtroom parody game with a serverless backend.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "^1.9.0",
+    "@supabase/supabase-js": "^2.43.4"
+  }
+}

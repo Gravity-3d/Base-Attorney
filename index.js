@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
-import { GoogleGenAI } from "@google/genai";
+// Functions from api.js are now globally available in this script's scope
+const { getCurrentUser, getAiResponse, updateStats } = window;
+
 
 const PROSECUTOR_KEY = 'oyh_selected_prosecutor';
-const API_KEY = "AIzaSyAUmC9UftOENS_Rl-o9_AqPwHPmTuUb2zE";
 
-// Functions from db.js need to be available in this scope
-// In a real build system, you would import them. For this environment, we assume they are globally available or shimmed.
-const getCurrentUser = window.getCurrentUser;
-const updateUser = window.updateUser;
+const JUDGE_SYSTEM_INSTRUCTION = `You are an impartial, stern, and wise Judge in a courtroom parody game. You have two distinct functions: ruling on objections and rendering a final verdict.
+1.  **Ruling on Objections**: If the prompt asks you to "Rule on this objection", you must respond with ONLY ONE of two words: "Sustained." or "Overruled.". This must be followed by a single, brief sentence explaining your reasoning. Example: "Sustained. The prosecutor is badgering the witness."
+2.  **Rendering a Final Verdict**: If the prompt asks you to "Render a final verdict", you must analyze the entire debate transcript provided. Based on the quality and persuasiveness of the arguments, you will declare a winner. Your response MUST begin with one of three phrases: "DEFENSE WINS.", "PROSECUTION WINS.", or "DEBATE CONTINUES.". This must be followed by a single, brief sentence summarizing your final decision. Example: "DEFENSE WINS. The defense successfully dismantled the prosecution's core argument." or "DEBATE CONTINUES. Both sides have made compelling points, but neither has landed a decisive blow."
+Do not deviate from these formats. Do not add any other pleasantries, greetings, or text.`;
 
 
 const VsAiPage = () => {
@@ -21,26 +22,17 @@ const VsAiPage = () => {
   const [flashVisual, setFlashVisual] = useState({ show: false, type: '', speaker: '' });
   const [gameState, setGameState] = useState('playing'); // playing, gameOver
   const [finalVerdict, setFinalVerdict] = useState({ winner: null, reason: '' });
-  const [takeThatCounters, setTakeThatCounters] = useState({ player: 0, ai: 0 });
+  const [takeThatCounters, setTakeThatCounters] =useState({ player: 0, ai: 0 });
 
-  const prosecutorChatRef = useRef(null);
-  const judgeChatRef = useRef(null);
   const dialogueEndRef = useRef(null);
 
   useEffect(() => {
-    // Check for prosecutor selection first
     const selectedProsecutorJSON = sessionStorage.getItem(PROSECUTOR_KEY);
     if (!selectedProsecutorJSON) {
         window.location.href = '/prosecutor-selection.html';
         return;
     }
     const prosecutor = JSON.parse(selectedProsecutorJSON);
-
-    if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE") {
-        setError("Configuration Needed: Open 'index.js' and replace 'YOUR_API_KEY_HERE' with your actual API key. The key must be placed inside the quotation marks to be a valid string.");
-        setDebateHistory([]);
-        return;
-    }
 
     const initializeGame = async () => {
         setIsLoading(true);
@@ -54,24 +46,6 @@ const VsAiPage = () => {
             
             setGameData({ topic: selectedTopic, prosecutor: prosecutor });
 
-            const ai = new GoogleGenAI({ apiKey: API_KEY });
-            
-            const prosecutorSystemInstruction = prosecutor.systemInstruction.replace('{TOPIC}', selectedTopic);
-            prosecutorChatRef.current = ai.chats.create({
-                model: "gemini-2.5-flash",
-                config: { systemInstruction: prosecutorSystemInstruction },
-            });
-
-            judgeChatRef.current = ai.chats.create({
-                 model: "gemini-2.5-flash",
-                 config: {
-                    systemInstruction: `You are an impartial, stern, and wise Judge in a courtroom parody game. You have two distinct functions: ruling on objections and rendering a final verdict.
-1.  **Ruling on Objections**: If the prompt asks you to "Rule on this objection", you must respond with ONLY ONE of two words: "Sustained." or "Overruled.". This must be followed by a single, brief sentence explaining your reasoning. Example: "Sustained. The prosecutor is badgering the witness."
-2.  **Rendering a Final Verdict**: If the prompt asks you to "Render a final verdict", you must analyze the entire debate transcript provided. Based on the quality and persuasiveness of the arguments, you will declare a winner. Your response MUST begin with one of three phrases: "DEFENSE WINS.", "PROSECUTION WINS.", or "DEBATE CONTINUES.". This must be followed by a single, brief sentence summarizing your final decision. Example: "DEFENSE WINS. The defense successfully dismantled the prosecution's core argument." or "DEBATE CONTINUES. Both sides have made compelling points, but neither has landed a decisive blow."
-Do not deviate from these formats. Do not add any other pleasantries, greetings, or text.`,
-                 }
-            });
-
             setDebateHistory([
                 { speaker: "Judge", text: `Court is now in session. Today's topic: ${selectedTopic}`},
                 { speaker: "Judge", text: `The prosecution will be handled by ${prosecutor.name}.`}
@@ -79,14 +53,13 @@ Do not deviate from these formats. Do not add any other pleasantries, greetings,
             setError(null);
         } catch (e) {
             console.error("Game Initialization Error:", e);
-            setError("An unexpected error occurred during game setup. Failed to fetch topics or initialize AI.");
+            setError("An unexpected error occurred during game setup. Failed to fetch topics.");
         } finally {
             setIsLoading(false);
         }
     };
 
     initializeGame();
-
   }, []);
 
   useEffect(() => {
@@ -103,21 +76,20 @@ Do not deviate from these formats. Do not add any other pleasantries, greetings,
     });
   };
 
-  const handleEndGame = async (winner, reason) => {
+  const handleEndGame = async (winner) => {
       setGameState('gameOver');
-      setFinalVerdict({ winner, reason });
       setIsLoading(false);
 
-      if (typeof getCurrentUser !== 'function' || typeof updateUser !== 'function') return;
-      
+      if (typeof getCurrentUser !== 'function' || typeof updateStats !== 'function') return;
       const user = getCurrentUser();
       if(user) {
-        if(winner === 'Defense') {
-            user.wins = (user.wins || 0) + 1;
-        } else if (winner === 'Prosecutor') {
-            user.losses = (user.losses || 0) + 1;
+        try {
+          const result = winner === 'Defense' ? 'win' : 'loss';
+          await updateStats(result);
+        } catch(e) {
+            console.error("Failed to update stats:", e.message);
+            // Optionally, inform the user that stats couldn't be saved.
         }
-        await updateUser(user);
       }
   };
 
@@ -128,11 +100,13 @@ Do not deviate from these formats. Do not add any other pleasantries, greetings,
 
       const newHistory = { speaker: "Judge", text: verdictText };
       setDebateHistory(prev => [...prev, newHistory]);
+      setFinalVerdict({ winner: verdict.includes('DEFENSE') ? 'Defense' : 'Prosecutor', reason });
+
 
       if (verdict === 'DEFENSE WINS') {
-          await handleEndGame('Defense', reason);
+          await handleEndGame('Defense');
       } else if (verdict === 'PROSECUTION WINS') {
-          await handleEndGame('Prosecutor', reason);
+          await handleEndGame('Prosecutor');
       } else { // DEBATE CONTINUES
           const newCounters = { ...takeThatCounters };
           let messageForProsecutor = '';
@@ -141,8 +115,9 @@ Do not deviate from these formats. Do not add any other pleasantries, greetings,
               newCounters.player++;
               if (newCounters.player >= 3) {
                   const loseReason = "The defense has exhausted its final arguments and failed to land a decisive blow. The court rules against you!";
+                  setFinalVerdict({ winner: 'Prosecutor', reason: loseReason });
                   setDebateHistory(prev => [...prev, { speaker: "Judge", text: loseReason }]);
-                  await handleEndGame('Prosecutor', loseReason);
+                  await handleEndGame('Prosecutor');
                   return;
               }
               messageForProsecutor = `The Judge has rejected the defense's attempt to end the debate, ruling: "${verdictText}". The defense has now tried this ${newCounters.player} time(s). Continue your counter-argument.`;
@@ -150,8 +125,9 @@ Do not deviate from these formats. Do not add any other pleasantries, greetings,
               newCounters.ai++;
                if (newCounters.ai >= 3) {
                   const winReason = "The prosecution has repeatedly failed to conclude the case. The court finds their desperation unconvincing and rules in your favor!";
+                  setFinalVerdict({ winner: 'Defense', reason: winReason });
                   setDebateHistory(prev => [...prev, { speaker: "Judge", text: winReason }]);
-                  await handleEndGame('Defense', winReason);
+                  await handleEndGame('Defense');
                   return;
               }
               messageForProsecutor = `The Judge has rejected your attempt to end the debate, ruling: "${verdictText}". You have now tried this ${newCounters.ai} time(s). Acknowledge this and continue your argument.`;
@@ -161,81 +137,108 @@ Do not deviate from these formats. Do not add any other pleasantries, greetings,
       }
   };
 
+  const callAI = async (persona, prompt, currentHistory) => {
+      let systemInstruction;
+      if (persona === 'judge') {
+          systemInstruction = JUDGE_SYSTEM_INSTRUCTION;
+      } else {
+          systemInstruction = gameData.prosecutor.systemInstruction.replace('{TOPIC}', gameData.topic);
+      }
+      
+      try {
+          const response = await getAiResponse(currentHistory, systemInstruction, prompt);
+          return response.text;
+      } catch (error) {
+          console.error(`Error calling AI for ${persona}:`, error);
+          setError(`The AI is unresponsive. Please check the server logs. (${error.message})`);
+          throw error;
+      }
+  };
+
   const handleProsecutorResponse = async (prompt, isInternal = false) => {
     try {
-      const response = await prosecutorChatRef.current.sendMessage({ message: prompt });
-      const responseText = response.text.trim();
+      const currentHistory = debateHistory.filter(m => m.speaker !== 'System Alert');
+      const responseText = await callAI('prosecutor', prompt, currentHistory);
 
-      // Check for special command tags from the AI
       if (responseText.startsWith('[OBJECTION]')) {
           const reason = responseText.replace('[OBJECTION]', '').trim();
           await triggerFlashAnimation('objection', 'Prosecutor');
           setDebateHistory(prev => [...prev, { speaker: gameData.prosecutor.name, text: `(Objects) ${reason}` }]);
+          
           const lastPlayerStatement = debateHistory.slice().reverse().find(m => m.speaker === 'Defense')?.text || "The defense's previous statement.";
           const judgePrompt = `The defense's last statement was: "${lastPlayerStatement}". The prosecution objects, stating: "${reason}". Rule on this objection.`;
-          const judgeResponse = await judgeChatRef.current.sendMessage({ message: judgePrompt });
-          setDebateHistory(prev => [...prev, { speaker: "Judge", text: judgeResponse.text }]);
+          const judgeResponseText = await callAI('judge', judgePrompt, debateHistory);
+          setDebateHistory(prev => [...prev, { speaker: "Judge", text: judgeResponseText }]);
 
       } else if (responseText.startsWith('[TAKE THAT!]')) {
           const finalArgument = responseText.replace('[TAKE THAT!]', '').trim();
           await triggerFlashAnimation('takethat', 'Prosecutor');
           setDebateHistory(prev => [...prev, { speaker: gameData.prosecutor.name, text: `(Attempts to conclude) ${finalArgument}` }]);
-          const fullDebate = debateHistory.map(d => `${d.speaker}: ${d.text}`).join('\n');
-          const judgePrompt = `The prosecution is attempting to end the debate with this final statement: "${finalArgument}". Here is the full transcript of the debate so far:\n\n${fullDebate}\n\nRender a final verdict.`;
-          const judgeResponse = await judgeChatRef.current.sendMessage({ message: judgePrompt });
-          await handleVerdict(judgeResponse.text, 'ai');
+          
+          const fullDebateText = debateHistory.map(d => `${d.speaker}: ${d.text}`).join('\n');
+          const judgePrompt = `The prosecution is attempting to end the debate with this final statement: "${finalArgument}". Here is the full transcript of the debate so far:\n\n${fullDebateText}\n\nRender a final verdict.`;
+          const judgeResponseText = await callAI('judge', judgePrompt, debateHistory);
+          await handleVerdict(judgeResponseText, 'ai');
 
       } else {
-          // Standard response
           if(!isInternal) {
             setDebateHistory((prev) => [...prev, { speaker: gameData.prosecutor.name, text: responseText }]);
           }
       }
     } catch (error) {
-      console.error("Error sending message to prosecutor:", error);
-      const errorMessage = { speaker: "System Alert", text: "The API call failed. Please verify your API key." };
-      setDebateHistory((prev) => [...prev, errorMessage]);
+        setDebateHistory((prev) => [...prev, { speaker: "System Alert", text: "The prosecutor AI call failed." }]);
     }
   };
 
-  const submitToAI = async (message, type) => {
-      if (!userInput.trim() || isLoading || !prosecutorChatRef.current || gameState === 'gameOver') return;
+  const submitToAI = async (type) => {
+      if (!userInput.trim() || isLoading || gameState === 'gameOver') return;
 
       setIsLoading(true);
       const statement = userInput;
       setUserInput("");
+      
+      let newHistory = [...debateHistory];
 
-      if (type === 'argument') {
-          const userMessage = { speaker: "Defense", text: statement };
-          setDebateHistory((prev) => [...prev, userMessage]);
-          await handleProsecutorResponse(statement);
+      try {
+        if (type === 'argument') {
+            newHistory.push({ speaker: "Defense", text: statement });
+            setDebateHistory(newHistory);
+            await handleProsecutorResponse(statement);
 
-      } else if (type === 'objection') {
-          const lastProsecutorStatement = debateHistory.slice().reverse().find(m => m.speaker === gameData.prosecutor.name)?.text;
-          if (!lastProsecutorStatement) {
-              setDebateHistory(prev => [...prev, { speaker: "Judge", text: "There is nothing to object to!" }]);
-              setIsLoading(false);
-              return;
-          }
-          await triggerFlashAnimation('objection', 'Defense');
-          setDebateHistory(prev => [...prev, { speaker: "Defense", text: `(Objects) ${statement}` }]);
-          
-          const judgePrompt = `The prosecution's last statement was: "${lastProsecutorStatement}". The defense objects, stating: "${statement}". Rule on this objection.`;
-          const judgeResponse = await judgeChatRef.current.sendMessage({ message: judgePrompt });
-          setDebateHistory(prev => [...prev, { speaker: "Judge", text: judgeResponse.text }]);
-          
-          const prosecutorPrompt = `The Judge has just ruled on an objection to your last statement. The ruling was: "${judgeResponse.text}". Acknowledge the ruling and continue your argument.`;
-          await handleProsecutorResponse(prosecutorPrompt, true);
+        } else if (type === 'objection') {
+            const lastProsecutorStatement = newHistory.slice().reverse().find(m => m.speaker === gameData.prosecutor.name)?.text;
+            if (!lastProsecutorStatement) {
+                setDebateHistory(prev => [...prev, { speaker: "Judge", text: "There is nothing to object to!" }]);
+                setIsLoading(false);
+                return;
+            }
+            await triggerFlashAnimation('objection', 'Defense');
+            newHistory.push({ speaker: "Defense", text: `(Objects) ${statement}` });
+            setDebateHistory(newHistory);
+            
+            const judgePrompt = `The prosecution's last statement was: "${lastProsecutorStatement}". The defense objects, stating: "${statement}". Rule on this objection.`;
+            const judgeResponseText = await callAI('judge', judgePrompt, newHistory);
+            newHistory.push({ speaker: "Judge", text: judgeResponseText });
+            setDebateHistory([...newHistory]);
+            
+            const prosecutorPrompt = `The Judge has just ruled on an objection to your last statement. The ruling was: "${judgeResponseText}". Acknowledge the ruling and continue your argument.`;
+            await handleProsecutorResponse(prosecutorPrompt, true);
 
-      } else if (type === 'takethat') {
-          await triggerFlashAnimation('takethat', 'Defense');
-          setDebateHistory(prev => [...prev, { speaker: "Defense", text: `(Attempts to conclude) ${statement}` }]);
-          const fullDebate = debateHistory.map(d => `${d.speaker}: ${d.text}`).join('\n');
-          const judgePrompt = `The defense is attempting to end the debate with this final statement: "${statement}". Here is the full transcript of the debate so far:\n\n${fullDebate}\n\nRender a final verdict.`;
-          const judgeResponse = await judgeChatRef.current.sendMessage({ message: judgePrompt });
-          await handleVerdict(judgeResponse.text, 'player');
+        } else if (type === 'takethat') {
+            await triggerFlashAnimation('takethat', 'Defense');
+            newHistory.push({ speaker: "Defense", text: `(Attempts to conclude) ${statement}` });
+            setDebateHistory(newHistory);
+            
+            const fullDebateText = newHistory.map(d => `${d.speaker}: ${d.text}`).join('\n');
+            const judgePrompt = `The defense is attempting to end the debate with this final statement: "${statement}". Here is the full transcript of the debate so far:\n\n${fullDebateText}\n\nRender a final verdict.`;
+            const judgeResponseText = await callAI('judge', judgePrompt, newHistory);
+            await handleVerdict(judgeResponseText, 'player');
+        }
+      } catch (e) {
+          // AI call errors are handled inside the callAI function by setting the error state
+      } finally {
+        if(gameState === 'playing') setIsLoading(false);
       }
-      if(gameState === 'playing') setIsLoading(false);
   };
   
   const getSpeakerClass = (speaker) => {
@@ -251,7 +254,7 @@ Do not deviate from these formats. Do not add any other pleasantries, greetings,
 
   if (error) {
     return React.createElement('div', { className: "text-center w-full max-w-4xl" },
-        React.createElement('h2', { className: "text-2xl md:text-3xl font-bold mb-6 text-center title-text", style: { textShadow: '4px 4px 0 #000' } }, "Configuration Error"),
+        React.createElement('h2', { className: "text-2xl md:text-3xl font-bold mb-6 text-center title-text", style: { textShadow: '4px 4px 0 #000' } }, "System Error"),
         React.createElement('div', { className: "w-full h-auto bg-gray-900 bg-opacity-75 border-4 border-white p-6 text-lg md:text-xl leading-relaxed" },
             React.createElement('p', { className: "text-orange-500 font-bold" }, error)
         )
@@ -304,11 +307,11 @@ Do not deviate from these formats. Do not add any other pleasantries, greetings,
     ),
 
     React.createElement('div', { className: "w-full max-w-4xl mt-6" },
-        React.createElement('textarea', { id: "argument-input", value: userInput, onChange: e => setUserInput(e.target.value), className: "form-input w-full h-28 resize-none text-lg", placeholder: "Your argument, objection reason, or final statement...", disabled: isLoading || !prosecutorChatRef.current || gameState === 'gameOver', 'aria-label': "Your argument or objection reason" }),
+        React.createElement('textarea', { id: "argument-input", value: userInput, onChange: e => setUserInput(e.target.value), className: "form-input w-full h-28 resize-none text-lg", placeholder: "Your argument, objection reason, or final statement...", disabled: isLoading || gameState === 'gameOver', 'aria-label': "Your argument or objection reason" }),
         React.createElement('div', { className: "grid grid-cols-3 gap-4 items-center mt-4" },
-            React.createElement('button', { type: "button", onClick: () => submitToAI(userInput, 'objection'), className: "btn text-2xl md:text-3xl !py-4 border-red-500 !text-red-500 hover:!border-red-400 hover:!text-red-400", style: { boxShadow: '6px 6px 0px #5B21B6' }, disabled: !canObject || gameState === 'gameOver'}, "OBJECTION!"),
-            React.createElement('button', { type: "button", onClick: () => submitToAI(userInput, 'takethat'), className: "btn text-2xl md:text-3xl !py-4 border-yellow-400 !text-yellow-400 hover:!border-yellow-300 hover:!text-yellow-300", style: { boxShadow: '6px 6px 0px #000000' }, disabled: !canTakeThat || gameState === 'gameOver'}, "TAKE THAT!"),
-            React.createElement('button', { type: "button", onClick: () => submitToAI(userInput, 'argument'), className: "btn text-lg md:text-xl", disabled: isLoading || !userInput.trim() || !prosecutorChatRef.current || gameState === 'gameOver' }, isLoading ? "Waiting..." : "Present")
+            React.createElement('button', { type: "button", onClick: () => submitToAI('objection'), className: "btn text-2xl md:text-3xl !py-4 border-red-500 !text-red-500 hover:!border-red-400 hover:!text-red-400", style: { boxShadow: '6px 6px 0px #5B21B6' }, disabled: !canObject || gameState === 'gameOver'}, "OBJECTION!"),
+            React.createElement('button', { type: "button", onClick: () => submitToAI('takethat'), className: "btn text-2xl md:text-3xl !py-4 border-yellow-400 !text-yellow-400 hover:!border-yellow-300 hover:!text-yellow-300", style: { boxShadow: '6px 6px 0px #000000' }, disabled: !canTakeThat || gameState === 'gameOver'}, "TAKE THAT!"),
+            React.createElement('button', { type: "button", onClick: () => submitToAI('argument'), className: "btn text-lg md:text-xl", disabled: isLoading || !userInput.trim() || gameState === 'gameOver' }, isLoading ? "Waiting..." : "Present")
         )
     )
   );

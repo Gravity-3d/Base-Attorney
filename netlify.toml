@@ -1,0 +1,13 @@
+# This file configures the build and deployment settings for Netlify.
+# Copy the contents of this file and paste it into a new file named "netlify.toml" in the root of your project.
+
+# The [functions] block tells Netlify where to find our serverless functions.
+# These are our secure backend API endpoints.
+[functions]
+  directory = "netlify/functions/"
+
+# The [build] block tells Netlify which directory contains the final static
+# files to be published to the web.
+[build]
+  # This is the root directory of your site where index.html is located.
+  publish = "/"

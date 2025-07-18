@@ -118,7 +118,7 @@
         <p>&copy; 2024 Your Honor Games. All Rights Reserved.</p>
     </footer>
 
-    <script src="db.js"></script>
+    <script src="api.js"></script>
     <script>
       const form = document.getElementById('sign-in-form');
       const messageEl = document.getElementById('form-message');
@@ -135,15 +135,15 @@
           const email = form.email.value;
           const password = form.password.value;
 
-          const result = await signInUser(email, password);
-          messageEl.textContent = result.message;
-
-          if (result.success) {
+          try {
+              const result = await loginUser(email, password);
+              messageEl.textContent = result.message;
               messageEl.classList.add('text-green-400');
               setTimeout(() => {
                   window.location.href = '/';
               }, 1500);
-          } else {
+          } catch (error) {
+              messageEl.textContent = error.message;
               messageEl.classList.add('text-red-400');
               submitButton.disabled = false;
               submitButton.textContent = 'Sign In';

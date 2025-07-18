@@ -126,7 +126,7 @@
         <p>&copy; 2024 Your Honor Games. All Rights Reserved.</p>
     </footer>
 
-    <script src="db.js"></script>
+    <script src="api.js"></script>
     <script>
       const form = document.getElementById('create-account-form');
       const messageEl = document.getElementById('form-message');
@@ -161,18 +161,19 @@
               return;
           }
 
-          const result = await createUser(username, email, password);
-          messageEl.textContent = result.message;
+          try {
+            const result = await registerUser(username, email, password);
+            messageEl.textContent = result.message || "Account created successfully! Redirecting...";
+            messageEl.classList.add('text-green-400');
+            setTimeout(() => {
+                window.location.href = '/sign-in.html';
+            }, 2500);
 
-          if (result.success) {
-              messageEl.classList.add('text-green-400');
-              setTimeout(() => {
-                  window.location.href = '/sign-in.html';
-              }, 1500);
-          } else {
-              messageEl.classList.add('text-red-400');
-              submitButton.disabled = false;
-              submitButton.textContent = 'Create';
+          } catch (error) {
+            messageEl.textContent = error.message;
+            messageEl.classList.add('text-red-400');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Create';
           }
       });
     </script>
