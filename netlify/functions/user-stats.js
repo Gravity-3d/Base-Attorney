@@ -1,43 +1,45 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
-// These environment variables are set in your Netlify build settings.
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL and/or Anon Key are not set in environment variables.');
-}
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export default async (req, context) => {
-    if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405 });
+exports.handler = async (event, context) => {
+    if (event.httpMethod !== 'POST') {
+        return {
+          statusCode: 405,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'Method Not Allowed' })
+        };
     }
 
-    try {
-        // 1. Get the user's JWT from the Authorization header
-        const authHeader = req.headers.get('Authorization');
-        if (!authHeader) {
-            return new Response(JSON.stringify({ error: 'No authorization token provided.' }), { status: 401 });
-        }
-        const token = authHeader.split(' ')[1]; // Bearer <token>
+    if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Supabase URL or Anon Key is not set.');
+        return {
+            statusCode: 500,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ error: 'Server configuration error.' }),
+        };
+    }
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-        // 2. Verify the token and get the user
+    try {
+        const authHeader = event.headers.authorization;
+        if (!authHeader) {
+            return { statusCode: 401, body: JSON.stringify({ error: 'No authorization token provided.' }) };
+        }
+        const token = authHeader.split(' ')[1];
+
         const { data: { user }, error: userError } = await supabase.auth.getUser(token);
         if (userError || !user) {
             console.error('Auth error:', userError);
-            return new Response(JSON.stringify({ error: 'Invalid or expired token.' }), { status: 401 });
+            return { statusCode: 401, body: JSON.stringify({ error: 'Invalid or expired token.' }) };
         }
 
-        // 3. Get the game result from the request body
-        const { result } = JSON.parse(req.body); // 'win' or 'loss'
+        const { result } = JSON.parse(event.body);
         if (result !== 'win' && result !== 'loss') {
-            return new Response(JSON.stringify({ error: 'Invalid result provided.' }), { status: 400 });
+            return { statusCode: 400, body: JSON.stringify({ error: 'Invalid result provided.' }) };
         }
 
-        // 4. Atomically update the user's stats using an RPC call
-        // This is safer than a SELECT then UPDATE, as it prevents race conditions.
-        // The `increment_stat` function must be created in your Supabase SQL Editor as per the README.md instructions.
         const columnToUpdate = result === 'win' ? 'wins' : 'losses';
 
         const { error: rpcError } = await supabase.rpc('increment_stat', {
@@ -47,14 +49,22 @@ export default async (req, context) => {
 
         if (rpcError) {
             console.error('RPC Error updating stats:', rpcError);
-            // Before deploying, make sure you have created the `increment_stat` function in your Supabase SQL editor!
-            return new Response(JSON.stringify({ error: 'Failed to update stats. Ensure the RPC function is set up in Supabase.' }), { status: 500 });
+            return { 
+                statusCode: 500, 
+                body: JSON.stringify({ error: 'Failed to update stats. Ensure the RPC function is set up in Supabase.' }) 
+            };
         }
 
-        return new Response(JSON.stringify({ message: 'Stats updated successfully.' }), { status: 200 });
+        return { 
+            statusCode: 200, 
+            body: JSON.stringify({ message: 'Stats updated successfully.' }) 
+        };
 
     } catch (e) {
         console.error('Stats update function error:', e);
-        return new Response(JSON.stringify({ error: 'An internal server error occurred.' }), { status: 500 });
+        return { 
+            statusCode: 500, 
+            body: JSON.stringify({ error: 'An internal server error occurred.' }) 
+        };
     }
 };

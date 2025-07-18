@@ -1,52 +1,84 @@
-import { GoogleGenAI } from "@google/genai";
+const { GoogleGenAI } = require("@google/genai");
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
-export default async (req, context) => {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405 });
+exports.handler = async (event) => {
+  // 1. Stricter method check
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Method Not Allowed' })
+    };
   }
-
+  
+  // 2. Stricter body and API key checks
   if (!API_KEY) {
-    return new Response(JSON.stringify({ error: 'API key is not configured on the server.' }), { status: 500 });
+     return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Server configuration error: API key not set.' })
+    };
+  }
+  if (!event.body) {
+    return { 
+        statusCode: 400, 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ error: 'Request body is missing.' }) 
+    };
   }
 
   try {
-    const { history, systemInstruction, prompt } = JSON.parse(req.body);
+    const { history, systemInstruction, prompt } = JSON.parse(event.body);
 
     if (!prompt || !systemInstruction || !Array.isArray(history)) {
-       return new Response(JSON.stringify({ error: 'Invalid request body. Requires history, systemInstruction, and prompt.' }), { status: 400 });
+       return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Invalid request body. Requires history, systemInstruction, and prompt.' })
+      };
     }
 
     const ai = new GoogleGenAI({ apiKey: API_KEY });
     
-    // Convert our simple history format to the format Gemini expects
-    const geminiHistory = history.map(item => ({
-        // In Gemini, 'user' is the one prompting the model. 'model' is the AI's response.
-        // We map Defense -> user, Prosecutor/Judge -> model
+    // Use the stateless `generateContent` for better reliability in a serverless environment.
+    // Map the client-side history to the format Gemini expects.
+    const contents = history.map(item => ({
+        // Prosecutor/Judge are the 'model', Defense is the 'user'
         role: item.speaker === 'Defense' ? 'user' : 'model',
         parts: [{ text: item.text }]
     }));
+    // Add the user's latest prompt to the end of the contents array.
+    contents.push({ role: 'user', parts: [{ text: prompt }] });
 
-    const chat = ai.chats.create({
+    const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        config: { systemInstruction: systemInstruction },
-        history: geminiHistory
+        contents: contents, // The full conversation history + new prompt
+        config: {
+            systemInstruction: systemInstruction
+        }
     });
-
-    const response = await chat.sendMessage({ message: prompt });
-    const responseText = response.text.trim();
     
-    return new Response(JSON.stringify({ text: responseText }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-    });
+    return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: response.text })
+    };
 
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    return new Response(JSON.stringify({ error: 'An error occurred while communicating with the AI.' }), {
-      status: 500,
+    console.error('AI Handler Error:', error);
+    // Differentiate between JSON parsing errors and other errors
+    if (error instanceof SyntaxError) {
+        return {
+          statusCode: 400,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'Invalid JSON in request body.' })
+        };
+    }
+    return {
+      statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-    });
+      body: JSON.stringify({ error: 'An error occurred while communicating with the AI.' })
+    };
   }
 };

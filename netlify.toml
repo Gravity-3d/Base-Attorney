@@ -9,5 +9,5 @@
 # The [build] block tells Netlify which directory contains the final static
 # files to be published to the web.
 [build]
-  # This is the root directory of your site where index.html is located.
+  # This should be the root directory of your site where index.html is located.
   publish = "/"
