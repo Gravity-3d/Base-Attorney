@@ -14,10 +14,9 @@ const VsAiPage = () => {
   const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [topic, setTopic] = useState("");
   const chatRef = useRef(null);
   const dialogueEndRef = useRef(null);
-
-  const TOPIC = "Is a hot dog a sandwich?";
 
   useEffect(() => {
     if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE") {
@@ -26,27 +25,44 @@ const VsAiPage = () => {
         return;
     }
 
-    try {
-      const ai = new GoogleGenAI({ apiKey: API_KEY });
-      chatRef.current = ai.chats.create({
-        model: "gemini-2.5-flash",
-        config: {
-          systemInstruction:
-            "You are a ruthless, cunning, and slightly dramatic prosecutor in a courtroom parody game. Your name is Miles Edgeworth. The user is the defense attorney. You are debating a mundane topic. Your goal is to counter the user's arguments with sharp logic and flair. Keep your responses dramatic, in character, and relatively short (2-4 sentences). Never break character. If the user says 'OBJECTION!', you must react to their interruption, re-evaluating your last statement or countering their objection with dramatic flair.",
-        },
-      });
+    const initializeGame = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/topics.json');
+            if (!response.ok) {
+                throw new Error(`Failed to fetch topics: ${response.statusText}`);
+            }
+            const data = await response.json();
+            const topics = data.topics;
+            const selectedTopic = topics[Math.floor(Math.random() * topics.length)];
+            setTopic(selectedTopic);
 
-      setDebateHistory([
-        {
-          speaker: "Judge",
-          text: `Court is now in session. Today's topic: ${TOPIC}`,
-        },
-      ]);
-      setError(null);
-    } catch (e) {
-        console.error("AI Initialization Error:", e);
-        setError("An unexpected error occurred during AI initialization.");
-    }
+            const ai = new GoogleGenAI({ apiKey: API_KEY });
+            chatRef.current = ai.chats.create({
+                model: "gemini-2.5-flash",
+                config: {
+                systemInstruction:
+                    "You are a ruthless, cunning, and slightly dramatic prosecutor in a courtroom parody game. Your name is Miles Edgeworth. The user is the defense attorney. You are debating a mundane topic. Your goal is to counter the user's arguments with sharp logic and flair. Keep your responses dramatic, in character, and relatively short (2-4 sentences). Never break character. If the user says 'OBJECTION!', you must react to their interruption, re-evaluating your last statement or countering their objection with dramatic flair.",
+                },
+            });
+
+            setDebateHistory([
+                {
+                speaker: "Judge",
+                text: `Court is now in session. Today's topic: ${selectedTopic}`,
+                },
+            ]);
+            setError(null);
+        } catch (e) {
+            console.error("Game Initialization Error:", e);
+            setError("An unexpected error occurred during game setup. Failed to fetch topics or initialize AI.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    initializeGame();
+
   }, []);
 
   useEffect(() => {
@@ -126,11 +142,20 @@ const VsAiPage = () => {
     );
   }
 
+  if (!topic) {
+    return React.createElement('div', { className: "text-center w-full max-w-4xl" },
+        React.createElement('h2', { className: "text-2xl md:text-3xl font-bold mb-6 text-center title-text", style: { textShadow: '4px 4px 0 #000' } }, "Choosing a Topic..."),
+        React.createElement('div', { className: "w-full h-auto bg-gray-900 bg-opacity-75 border-4 border-white p-6 text-lg md:text-xl leading-relaxed" },
+            React.createElement('p', null, "The court is deliberating on a suitably mundane topic for today's proceedings. Please wait.")
+        )
+    );
+  }
+
   return React.createElement(React.Fragment, null,
     React.createElement('h2', {
         className: "text-2xl md:text-3xl font-bold mb-6 text-center title-text",
         style: { textShadow: '4px 4px 0 #000' }
-    }, `Topic: ${TOPIC}`),
+    }, `Topic: ${topic}`),
 
     React.createElement('div', {
         id: "courtroom-scene",
@@ -151,7 +176,7 @@ const VsAiPage = () => {
                 ` ${entry.text}`
             )
         ),
-        isLoading ? React.createElement('div', { className: "mb-4" },
+        isLoading && debateHistory.length > 1 ? React.createElement('div', { className: "mb-4" },
             React.createElement('span', { className: "font-bold text-red-400" }, "Prosecutor:"),
             " Thinking..."
         ) : null,
