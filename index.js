@@ -1,8 +1,9 @@
 
+
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
 // Functions from api.js are now globally available in this script's scope
-const { getCurrentUser, getAiResponse, updateStats } = window;
+const { getCurrentUser, getAiResponse, updateStats, playUiSound } = window;
 
 
 const PROSECUTOR_KEY = 'oyh_selected_prosecutor';
@@ -23,6 +24,7 @@ const VsAiPage = () => {
   const [gameState, setGameState] = useState('playing'); // playing, gameOver
   const [finalVerdict, setFinalVerdict] = useState({ winner: null, reason: '' });
   const [takeThatCounters, setTakeThatCounters] =useState({ player: 0, ai: 0 });
+  const [attorneyName, setAttorneyName] = useState('the Defense Attorney');
 
   const dialogueEndRef = useRef(null);
 
@@ -33,6 +35,11 @@ const VsAiPage = () => {
         return;
     }
     const prosecutor = JSON.parse(selectedProsecutorJSON);
+    
+    const user = getCurrentUser();
+    if (user && user.username) {
+        setAttorneyName(user.username);
+    }
 
     const initializeGame = async () => {
         setIsLoading(true);
@@ -142,7 +149,9 @@ const VsAiPage = () => {
       if (persona === 'judge') {
           systemInstruction = JUDGE_SYSTEM_INSTRUCTION;
       } else {
-          systemInstruction = gameData.prosecutor.systemInstruction.replace('{TOPIC}', gameData.topic);
+          systemInstruction = gameData.prosecutor.systemInstruction
+              .replace('{TOPIC}', gameData.topic)
+              .replace('{DEFENSE_ATTORNEY_NAME}', attorneyName);
       }
       
       try {
@@ -252,6 +261,13 @@ const VsAiPage = () => {
   const canObject = !isLoading && !!userInput.trim() && debateHistory.length > 0 && debateHistory[debateHistory.length - 1]?.speaker === gameData.prosecutor?.name;
   const canTakeThat = !isLoading && !!userInput.trim() && takeThatCounters.player < 3;
 
+  const handleButtonClick = (action) => {
+      if (typeof playUiSound === 'function') {
+        playUiSound();
+      }
+      submitToAI(action);
+  };
+
   if (error) {
     return React.createElement('div', { className: "text-center w-full max-w-4xl" },
         React.createElement('h2', { className: "text-2xl md:text-3xl font-bold mb-6 text-center title-text", style: { textShadow: '4px 4px 0 #000' } }, "System Error"),
@@ -309,9 +325,9 @@ const VsAiPage = () => {
     React.createElement('div', { className: "w-full max-w-4xl mt-6" },
         React.createElement('textarea', { id: "argument-input", value: userInput, onChange: e => setUserInput(e.target.value), className: "form-input w-full h-28 resize-none text-lg", placeholder: "Your argument, objection reason, or final statement...", disabled: isLoading || gameState === 'gameOver', 'aria-label': "Your argument or objection reason" }),
         React.createElement('div', { className: "grid grid-cols-3 gap-4 items-center mt-4" },
-            React.createElement('button', { type: "button", onClick: () => submitToAI('objection'), className: "btn text-2xl md:text-3xl !py-4 border-red-500 !text-red-500 hover:!border-red-400 hover:!text-red-400", style: { boxShadow: '6px 6px 0px #5B21B6' }, disabled: !canObject || gameState === 'gameOver'}, "OBJECTION!"),
-            React.createElement('button', { type: "button", onClick: () => submitToAI('takethat'), className: "btn text-2xl md:text-3xl !py-4 border-yellow-400 !text-yellow-400 hover:!border-yellow-300 hover:!text-yellow-300", style: { boxShadow: '6px 6px 0px #000000' }, disabled: !canTakeThat || gameState === 'gameOver'}, "TAKE THAT!"),
-            React.createElement('button', { type: "button", onClick: () => submitToAI('argument'), className: "btn text-lg md:text-xl", disabled: isLoading || !userInput.trim() || gameState === 'gameOver' }, isLoading ? "Waiting..." : "Present")
+            React.createElement('button', { type: "button", onClick: () => handleButtonClick('objection'), className: "btn text-2xl md:text-3xl !py-4 border-red-500 !text-red-500 hover:!border-red-400 hover:!text-red-400", style: { boxShadow: '6px 6px 0px #5B21B6' }, disabled: !canObject || gameState === 'gameOver'}, "OBJECTION!"),
+            React.createElement('button', { type: "button", onClick: () => handleButtonClick('takethat'), className: "btn text-2xl md:text-3xl !py-4 border-yellow-400 !text-yellow-400 hover:!border-yellow-300 hover:!text-yellow-300", style: { boxShadow: '6px 6px 0px #000000' }, disabled: !canTakeThat || gameState === 'gameOver'}, "TAKE THAT!"),
+            React.createElement('button', { type: "button", onClick: () => handleButtonClick('argument'), className: "btn text-lg md:text-xl", disabled: isLoading || !userInput.trim() || gameState === 'gameOver' }, isLoading ? "Waiting..." : "Present")
         )
     )
   );

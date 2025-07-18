@@ -2,6 +2,26 @@
 
 const USER_SESSION_KEY = 'oyh_user_session';
 
+// --- UI Sound Effects ---
+const UI_SOUND_B64 = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVEAAAAAAP9/AAAABwD/fQAABAAAAAAAAAAAAAAA//8A/38AAAEAAAAAAAAAAAAA/3wAAAEAAAAA/30AAAEAAAD/fAAAAQAAAAEAAAAAAAAA/3wAAAIAAAAA/30AAAD/fAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8=';
+let uiAudio = null;
+/**
+ * Plays a short, retro-style UI sound effect.
+ */
+function playUiSound() {
+    try {
+        if (!uiAudio) {
+            uiAudio = new Audio(UI_SOUND_B64);
+            uiAudio.volume = 0.3;
+        }
+        // Allows playing the sound again before it has finished.
+        uiAudio.currentTime = 0;
+        uiAudio.play();
+    } catch (e) {
+        console.error("Could not play UI sound", e);
+    }
+}
+
 // --- User & Session Management ---
 
 /**
@@ -158,6 +178,16 @@ async function updateStats(result) {
 }
 
 
+// --- Global Event Listeners ---
+document.addEventListener('click', (e) => {
+    // Play sound for any 'btn' class element that isn't disabled.
+    const button = e.target.closest('.btn');
+    if (button && !button.disabled) {
+        playUiSound();
+    }
+});
+
+
 // --- Expose functions to the global scope for other scripts ---
 window.registerUser = registerUser;
 window.loginUser = loginUser;
@@ -165,3 +195,4 @@ window.signOutUser = signOutUser;
 window.getCurrentUser = getCurrentUser;
 window.getAiResponse = getAiResponse;
 window.updateStats = updateStats;
+window.playUiSound = playUiSound;
