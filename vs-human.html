@@ -45,11 +45,15 @@
         border-width: 2px;
         box-shadow: 4px 4px 0px #000000;
       }
-      .btn-sm:hover, .btn-sm:focus-visible {
+      .btn-sm:hover:not(:disabled), .btn-sm:focus-visible:not(:disabled) {
         box-shadow: 2px 2px 0px #000000;
       }
-      .btn-sm:active {
+      .btn-sm:active:not(:disabled) {
         box-shadow: none;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       .title-text {
         text-shadow: 6px 6px 0 #000;
@@ -58,9 +62,23 @@
       .content-box {
         border: 4px solid #ffffff;
         background-color: #2d3748;
-        padding: 2rem 4rem;
+        padding: 2rem;
         box-shadow: 8px 8px 0px #000000;
-        text-align: center;
+        width: 100%;
+        max-width: 48rem;
+      }
+      .game-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid #4a5568;
+        background-color: #1a202c;
+        margin-bottom: 1rem;
+        transition: background-color 0.2s;
+      }
+      .game-list-item:hover {
+        background-color: #252e3e;
       }
     </style>
   </head>
@@ -74,22 +92,36 @@
 
     <!-- Main Content -->
     <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
-        <div class="content-box">
+        <div id="lobby-container" class="content-box">
             <h1 class="text-4xl md:text-5xl font-bold mb-6 title-text">
-                Coming Soon!
+                Game Lobby
             </h1>
-            <p class="text-base md:text-lg max-w-lg">
-                The "Vs. Human" game mode is currently under construction. Our top developers are working hard in the legal library to bring you real-time courtroom battles.
-            </p>
-            <p class="text-base md:text-lg mt-4 max-w-lg">
-                Please check back later!
-            </p>
+            <div id="auth-gate">
+                <p class="text-lg mb-6">You must be signed in to play against other humans.</p>
+                <a href="/sign-in.html" class="btn">Sign In</a>
+            </div>
+            <div id="lobby-content" class="hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                    <p class="text-lg">Welcome, <span id="username-display" class="text-yellow-300">Player</span>!</p>
+                    <button id="create-game-btn" class="btn">Create New Game</button>
+                </div>
+                
+                <h2 class="text-2xl title-text mb-4" style="text-shadow: 4px 4px 0 #000;">Open Games</h2>
+                <div id="game-list" class="text-left text-sm md:text-base">
+                    <!-- Open games will be listed here -->
+                    <p id="loading-games">Loading open games...</p>
+                </div>
+                 <p id="lobby-error" class="mt-4 text-red-400 h-4"></p>
+            </div>
         </div>
     </main>
 
     <footer class="text-center p-4 text-xs text-gray-500">
         <p>&copy; 2024 Your Honor Games. All Rights Reserved.</p>
     </footer>
+
+    <script src="/api.js"></script>
+    <script src="/lobby.js"></script>
 
   </body>
 </html>

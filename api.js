@@ -3,7 +3,7 @@
 const USER_SESSION_KEY = 'oyh_user_session';
 
 // --- UI Sound Effects ---
-const UI_SOUND_B64 = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVEAAAAAAP9/AAAABwD/fQAABAAAAAAAAAAAAAAA//8A/38AAAEAAAAAAAAAAAAA/3wAAAEAAAAA/30AAAEAAAD/fAAAAQAAAAEAAAAAAAAA/3wAAAIAAAAA/30AAAD/fAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8=';
+const UI_SOUND_B64 = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVEAAAAAAP9/AAAABwD/fQAABAAAAAAAAAAAAAAA//8A/38AAAEAAAAAAAAAAAAA/3wAAAEAAAAA/30AAAEAAAD/fAAAAQAAAAEAAAAAAAAA/3wAAAIAAAAA/30AAAD/fAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8=';
 let uiAudio = null;
 /**
  * Plays a short, retro-style UI sound effect.
@@ -44,7 +44,8 @@ function getUserSession() {
   try {
     const session = localStorage.getItem(USER_SESSION_KEY);
     return session ? JSON.parse(session) : null;
-  } catch (e) {
+  } catch (e)
+    {
     console.error("Error retrieving user session", e);
     return null;
   }
@@ -59,7 +60,6 @@ function signOutUser() {
   } catch (e) {
     console.error("Error signing out user", e);
   }
-  // No need to call Supabase signout here, as the token becomes invalid when cleared.
 }
 
 
@@ -94,54 +94,41 @@ async function fetchApi(endpoint, method, body, token) {
 
   if (token) {
     options.headers['Authorization'] = `Bearer ${token}`;
+  } else {
+      const session = getUserSession();
+      if (session && session.session.access_token) {
+          options.headers['Authorization'] = `Bearer ${session.session.access_token}`;
+      }
   }
 
   try {
     const response = await fetch(endpoint, options);
     
-    // Check if the response is JSON before trying to parse it.
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.indexOf("application/json") !== -1) {
         const data = await response.json();
         if (!response.ok) {
-            // Use the error message from the API response if available, otherwise use a default.
             throw new Error(data.error || `HTTP error! status: ${response.status}`);
         }
         return data;
     } else {
-        // If not JSON, it's likely an HTML error page from the server function crashing.
         const text = await response.text();
         console.error("Non-JSON response from server:", text);
         throw new Error(`Server returned a non-JSON response. Status: ${response.status}. Check Netlify function logs for endpoint ${endpoint}.`);
     }
 
   } catch (error) {
-    // This will catch both network errors and the errors we throw above.
     console.error(`API call to ${endpoint} failed:`, error.message);
-    // Re-throw to be caught by the calling function, which can then update the UI.
     throw error;
   }
 }
 
 // --- Exposed API Functions ---
 
-/**
- * Registers a new user.
- * @param {string} username
- * @param {string} email
- * @param {string} password
- * @returns {Promise<Object>}
- */
+// Auth
 async function registerUser(username, email, password) {
   return fetchApi('/api/auth-register', 'POST', { username, email, password });
 }
-
-/**
- * Logs in a user.
- * @param {string} email
- * @param {string} password
- * @returns {Promise<Object>}
- */
 async function loginUser(email, password) {
   const data = await fetchApi('/api/auth-login', 'POST', { email, password });
   if (data.session) {
@@ -150,37 +137,39 @@ async function loginUser(email, password) {
   return data;
 }
 
-/**
- * Gets a response from the AI.
- * @param {Array} history - The current debate history.
- * @param {string} systemInstruction - The system instruction for the AI persona.
- * @param {string} prompt - The new prompt for the AI.
- * @returns {Promise<Object>}
- */
+// Vs. AI
 async function getAiResponse(history, systemInstruction, prompt) {
     return fetchApi('/api/game-ai-handler', 'POST', { history, systemInstruction, prompt });
 }
-
-
-/**
- * Updates the user's game stats.
- * @param {'win' | 'loss'} result - The result of the game.
- * @returns {Promise<Object>}
- */
 async function updateStats(result) {
     const session = getUserSession();
     if (!session || !session.session.access_token) {
         console.warn("Cannot update stats. User not logged in.");
         return Promise.resolve({ message: "Not logged in" });
     }
-    
     return fetchApi('/api/user-stats', 'POST', { result }, session.session.access_token);
+}
+
+// Vs. Human
+async function getOpenGames() {
+    return fetchApi('/api/game-lobby', 'GET');
+}
+async function createGame() {
+    return fetchApi('/api/game-lobby', 'POST', { action: 'create' });
+}
+async function joinGame(gameId) {
+    return fetchApi('/api/game-lobby', 'POST', { action: 'join', gameId });
+}
+async function getGameState(gameId) {
+    return fetchApi(`/api/game-state?id=${gameId}`, 'GET');
+}
+async function sendGameUpdate(gameId, action, text) {
+    return fetchApi('/api/game-update', 'POST', { gameId, action, text });
 }
 
 
 // --- Global Event Listeners ---
 document.addEventListener('click', (e) => {
-    // Play sound for any 'btn' class element that isn't disabled.
     const button = e.target.closest('.btn');
     if (button && !button.disabled) {
         playUiSound();
@@ -188,7 +177,7 @@ document.addEventListener('click', (e) => {
 });
 
 
-// --- Expose functions to the global scope for other scripts ---
+// --- Expose functions to the global scope ---
 window.registerUser = registerUser;
 window.loginUser = loginUser;
 window.signOutUser = signOutUser;
@@ -196,3 +185,8 @@ window.getCurrentUser = getCurrentUser;
 window.getAiResponse = getAiResponse;
 window.updateStats = updateStats;
 window.playUiSound = playUiSound;
+window.getOpenGames = getOpenGames;
+window.createGame = createGame;
+window.joinGame = joinGame;
+window.getGameState = getGameState;
+window.sendGameUpdate = sendGameUpdate;
