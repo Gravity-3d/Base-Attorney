@@ -35,6 +35,26 @@ const callAIJudge = async (prompt) => {
     return response.text;
 };
 
+/**
+ * A robust helper to update win/loss stats for both players.
+ * This is fire-and-forget and does not block game flow on failure.
+ * @param {SupabaseClient} supabase - The Supabase client instance.
+ * @param {string} winnerId - The UUID of the winning player.
+ * @param {string} loserId - The UUID of the losing player.
+ */
+const updateGameStats = async (supabase, winnerId, loserId) => {
+    try {
+        await Promise.all([
+            supabase.rpc('increment_stat', { user_id_in: winnerId, stat_column: 'wins' }),
+            supabase.rpc('increment_stat', { user_id_in: loserId, stat_column: 'losses' })
+        ]);
+    } catch (e) {
+        // Log the error but don't let it block the game from finishing.
+        console.error("Non-critical error updating stats:", e.message);
+    }
+};
+
+
 // --- Main Handler ---
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
@@ -88,7 +108,6 @@ exports.handler = async (event) => {
 
             case 'takethat':
                 history.push({ speakerRole: playerRole, text: `(Attempts to conclude) ${text}` });
-                // Correctly copy the counters object, which is already parsed by supabase-js
                 let counters = { ...(game.take_that_counters || {}) };
                 counters[playerRole] = (counters[playerRole] || 0) + 1;
 
@@ -96,6 +115,7 @@ exports.handler = async (event) => {
                     const reason = `The ${playerRole} has exhausted their final arguments and failed to land a decisive blow.`;
                     history.push({ speakerRole: 'Judge', text: reason });
                     updates = { history, status: 'finished', winner_id: opponentId, verdict_reason: reason, current_turn: null };
+                    await updateGameStats(supabase, opponentId, user.id); // Update stats on 3-strike loss
                 } else {
                     const transcript = history.map(d => `${d.speakerRole}: ${d.text}`).join('\n');
                     const verdictPrompt = `The ${playerRole} is attempting to end the debate with this final statement: "${text}". Here is the full transcript:\n\n${transcript}\n\nRender a final verdict.`;
@@ -111,8 +131,7 @@ exports.handler = async (event) => {
                         updates = { history, status: 'finished', winner_id: winnerId, verdict_reason: reason, current_turn: null };
                         
                         const loserId = winnerId === game.defense_player_id ? game.prosecution_player_id : game.defense_player_id;
-                        supabase.rpc('increment_stat', { user_id_in: winnerId, stat_column: 'wins' }).then();
-                        supabase.rpc('increment_stat', { user_id_in: loserId, stat_column: 'losses' }).then();
+                        await updateGameStats(supabase, winnerId, loserId);
                     }
                 }
                 break;
