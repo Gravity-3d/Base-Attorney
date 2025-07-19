@@ -1,4 +1,5 @@
 
+
 const { createClient } = require('@supabase/supabase-js');
 const { GoogleGenAI } = require("@google/genai");
 
@@ -43,6 +44,10 @@ const callAIJudge = async (prompt) => {
  * @param {string} loserId - The UUID of the losing player.
  */
 const updateGameStats = async (supabase, winnerId, loserId) => {
+    if (!winnerId || !loserId) {
+        console.error("Cannot update stats: winnerId or loserId is missing.");
+        return;
+    }
     try {
         await Promise.all([
             supabase.rpc('increment_stat', { user_id_in: winnerId, stat_column: 'wins' }),
@@ -61,12 +66,14 @@ exports.handler = async (event) => {
         return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
 
+    let supabase; // Define here to be accessible in the final catch block if needed.
+
     try {
         // --- Authentication & Setup ---
         const authHeader = event.headers.authorization;
         if (!authHeader) throw new Error('Unauthorized: No token provided.');
         const token = authHeader.split(' ')[1];
-        const supabase = createAuthedClient(token);
+        supabase = createAuthedClient(token);
 
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) throw new Error('Unauthorized: Invalid token.');
@@ -115,7 +122,6 @@ exports.handler = async (event) => {
                     const reason = `The ${playerRole} has exhausted their final arguments and failed to land a decisive blow.`;
                     history.push({ speakerRole: 'Judge', text: reason });
                     updates = { history, status: 'finished', winner_id: opponentId, verdict_reason: reason, current_turn: null };
-                    await updateGameStats(supabase, opponentId, user.id); // Update stats on 3-strike loss
                 } else {
                     const transcript = history.map(d => `${d.speakerRole}: ${d.text}`).join('\n');
                     const verdictPrompt = `The ${playerRole} is attempting to end the debate with this final statement: "${text}". Here is the full transcript:\n\n${transcript}\n\nRender a final verdict.`;
@@ -129,9 +135,6 @@ exports.handler = async (event) => {
                     } else {
                         const winnerId = verdict.startsWith('DEFENSE WINS') ? game.defense_player_id : game.prosecution_player_id;
                         updates = { history, status: 'finished', winner_id: winnerId, verdict_reason: reason, current_turn: null };
-                        
-                        const loserId = winnerId === game.defense_player_id ? game.prosecution_player_id : game.defense_player_id;
-                        await updateGameStats(supabase, winnerId, loserId);
                     }
                 }
                 break;
@@ -141,7 +144,17 @@ exports.handler = async (event) => {
         }
 
         // --- Commit Updates to DB ---
-        await supabase.from('games').update(updates).eq('id', gameId);
+        const { error: updateError } = await supabase.from('games').update(updates).eq('id', gameId);
+        if (updateError) {
+            console.error('Supabase update error:', updateError);
+            throw new Error(`Failed to update game state: ${updateError.message}`);
+        }
+
+        // --- Post-Update Actions (like stat updates) ---
+        if (updates.status === 'finished') {
+            const loserId = updates.winner_id === game.defense_player_id ? game.prosecution_player_id : game.defense_player_id;
+            await updateGameStats(supabase, updates.winner_id, loserId);
+        }
         
         return {
             statusCode: 200,

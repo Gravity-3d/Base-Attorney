@@ -44,20 +44,18 @@ const VsHumanPage = () => {
                 if (updatedGame && updatedGame.status === 'waiting' && updatedGame.host_id !== user.id && !hasAttemptedJoin) {
                     hasAttemptedJoin = true; // Set flag to prevent re-joining on every poll
                     try {
-                        await joinGame(gameIdRef.current);
-                        // After successfully joining, the next scheduled poll will fetch the updated 'active' game state.
-                        // We can return here to avoid setting state with the stale 'waiting' data.
-                        return;
+                        // Capture the result of joinGame and update state immediately.
+                        const joinedGame = await joinGame(gameIdRef.current);
+                        setGame(joinedGame); // This fixes the race condition.
                     } catch (joinError) {
                         setError(joinError.message || "Failed to join game. It may have been taken by another player.");
                         if (pollingRef.current) clearInterval(pollingRef.current); // Stop polling on join failure.
-                        return;
                     }
+                } else {
+                     setGame(updatedGame);
                 }
-
-                setGame(updatedGame);
                 
-                if (updatedGame.status === 'finished' && pollingRef.current) {
+                if (updatedGame && updatedGame.status === 'finished' && pollingRef.current) {
                     clearInterval(pollingRef.current);
                 }
             } catch (err) {
@@ -105,8 +103,8 @@ const VsHumanPage = () => {
                 const playerRole = game.defense_player_id === currentUser.id ? 'Defense' : 'Prosecution';
                 await triggerFlashAnimation(actionType, playerRole);
             }
+            // The polling mechanism will automatically fetch the result of our action.
             await sendGameUpdate(gameIdRef.current, actionType, text);
-            // State will be updated by the next poll, no need to set it here.
         } catch (e) {
             setError(e.message || `Failed to perform action: ${actionType}`);
             setUserInput(text); // Restore input if action failed
