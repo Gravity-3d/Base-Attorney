@@ -88,7 +88,8 @@ exports.handler = async (event) => {
 
             case 'takethat':
                 history.push({ speakerRole: playerRole, text: `(Attempts to conclude) ${text}` });
-                let counters = game.take_that_counters ? JSON.parse(JSON.stringify(game.take_that_counters)) : {};
+                // Correctly copy the counters object, which is already parsed by supabase-js
+                let counters = { ...(game.take_that_counters || {}) };
                 counters[playerRole] = (counters[playerRole] || 0) + 1;
 
                 if (counters[playerRole] >= 3) {
