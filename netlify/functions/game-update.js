@@ -5,7 +5,7 @@ const { GoogleGenAI } = require("@google/genai");
 // --- Environment & AI Setup ---
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-const geminiApiKey = process.env.GEMINI_API_KEY;
+const geminiApiKey = "AIzaSyAUmC9UftOENS_Rl-o9_AqPwHPmTuUb2zE";
 
 let ai;
 if (geminiApiKey) {
