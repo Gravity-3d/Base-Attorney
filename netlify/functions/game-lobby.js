@@ -75,7 +75,7 @@ exports.handler = async (event) => {
                 if (!gameId) return { statusCode: 400, body: JSON.stringify({ error: 'Game ID is required to join.' }) };
                 
                 const { data: gameToJoin, error: fetchError } = await supabase
-                    .from('games').select('host_id, topic').eq('id', gameId).single();
+                    .from('games').select('*').eq('id', gameId).single();
 
                 if (fetchError || !gameToJoin) throw new Error('Game not found or already started.');
 
