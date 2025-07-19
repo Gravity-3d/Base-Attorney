@@ -1,4 +1,5 @@
 
+
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -42,13 +43,14 @@ exports.handler = async (event) => {
         try {
             const { data, error } = await supabase
                 .from('games')
-                .select('id, topic, host_id, host:profiles!host_id(username)')
+                .select('*, host:profiles!host_id(username)')
                 .eq('status', 'waiting')
                 .neq('host_id', user.id); // Don't show user their own games
 
             if (error) throw error;
             return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data || []) };
         } catch (e) {
+            console.error("Error fetching open games:", e.message);
             return { statusCode: 500, body: JSON.stringify({ error: e.message }) };
         }
     }
