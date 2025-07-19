@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
 
-const { getCurrentUser, sendGameUpdate, getGameState, playUiSound } = window;
+const { getCurrentUser, sendGameUpdate, getGameState, joinGame, playUiSound } = window;
 
 const VsHumanPage = () => {
     const [game, setGame] = useState(null);
@@ -33,10 +33,28 @@ const VsHumanPage = () => {
         }
         gameIdRef.current = gameId;
 
+        let hasAttemptedJoin = false; // Flag to prevent multiple join attempts
+
         const fetchGameState = async () => {
             if (!gameIdRef.current) return;
             try {
                 const updatedGame = await getGameState(gameIdRef.current);
+
+                // If the game is waiting for an opponent and this user isn't the host, try to join.
+                if (updatedGame && updatedGame.status === 'waiting' && updatedGame.host_id !== user.id && !hasAttemptedJoin) {
+                    hasAttemptedJoin = true; // Set flag to prevent re-joining on every poll
+                    try {
+                        await joinGame(gameIdRef.current);
+                        // After successfully joining, the next scheduled poll will fetch the updated 'active' game state.
+                        // We can return here to avoid setting state with the stale 'waiting' data.
+                        return;
+                    } catch (joinError) {
+                        setError(joinError.message || "Failed to join game. It may have been taken by another player.");
+                        if (pollingRef.current) clearInterval(pollingRef.current); // Stop polling on join failure.
+                        return;
+                    }
+                }
+
                 setGame(updatedGame);
                 
                 if (updatedGame.status === 'finished' && pollingRef.current) {
