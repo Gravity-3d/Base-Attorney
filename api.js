@@ -3,7 +3,7 @@
 const USER_SESSION_KEY = 'oyh_user_session';
 
 // --- UI Sound Effects ---
-const UI_SOUND_B64 = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVEAAAAAAP9/AAAABwD/fQAABAAAAAAAAAAAAAAA//8A/38AAAEAAAAAAAAAAAAA/3wAAAEAAAAA/30AAAEAAAD/fAAAAQAAAAEAAAAAAAAA/3wAAAIAAAAA/30AAAD/fAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8=';
+const UI_SOUND_B64 = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVEAAAAAAP9/AAAABwD/fQAABAAAAAAAAAAAAAAA//8A/38AAAEAAAAAAAAAAAAA/3wAAAEAAAAA/30AAAEAAAD/fAAA/wAAAAEAAAAAAAAA/3wAAAIAAAAA/30AAAD/fAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8AAAEAAAD/fQAAAgAAAP99AAAA//8=';
 let uiAudio = null;
 /**
  * Plays a short, retro-style UI sound effect.
@@ -72,6 +72,16 @@ function getCurrentUser() {
     return session ? session.user : null;
 }
 
+/**
+ * Gets the current user's auth token from the session.
+ * @returns {string|null} The auth token or null.
+ */
+function getAuthToken() {
+    const session = getUserSession();
+    return session ? session.session.access_token : null;
+}
+
+
 // --- API Fetch Functions ---
 
 /**
@@ -94,11 +104,6 @@ async function fetchApi(endpoint, method, body, token) {
 
   if (token) {
     options.headers['Authorization'] = `Bearer ${token}`;
-  } else {
-      const session = getUserSession();
-      if (session && session.session.access_token) {
-          options.headers['Authorization'] = `Bearer ${session.session.access_token}`;
-      }
   }
 
   try {
@@ -142,29 +147,39 @@ async function getAiResponse(history, systemInstruction, prompt) {
     return fetchApi('/api/game-ai-handler', 'POST', { history, systemInstruction, prompt });
 }
 async function updateStats(result) {
-    const session = getUserSession();
-    if (!session || !session.session.access_token) {
+    const token = getAuthToken();
+    if (!token) {
         console.warn("Cannot update stats. User not logged in.");
         return Promise.resolve({ message: "Not logged in" });
     }
-    return fetchApi('/api/user-stats', 'POST', { result }, session.session.access_token);
+    return fetchApi('/api/user-stats', 'POST', { result }, token);
 }
 
 // Vs. Human
 async function getOpenGames() {
-    return fetchApi('/api/game-lobby', 'GET');
+    const token = getAuthToken();
+    if (!token) return Promise.reject(new Error("User not authenticated. Please sign in."));
+    return fetchApi('/api/game-lobby', 'GET', null, token);
 }
 async function createGame() {
-    return fetchApi('/api/game-lobby', 'POST', { action: 'create' });
+    const token = getAuthToken();
+    if (!token) return Promise.reject(new Error("User not authenticated. Please sign in."));
+    return fetchApi('/api/game-lobby', 'POST', { action: 'create' }, token);
 }
 async function joinGame(gameId) {
-    return fetchApi('/api/game-lobby', 'POST', { action: 'join', gameId });
+    const token = getAuthToken();
+    if (!token) return Promise.reject(new Error("User not authenticated. Please sign in."));
+    return fetchApi('/api/game-lobby', 'POST', { action: 'join', gameId }, token);
 }
 async function getGameState(gameId) {
-    return fetchApi(`/api/game-state?id=${gameId}`, 'GET');
+    const token = getAuthToken();
+    if (!token) return Promise.reject(new Error("User not authenticated. Please sign in."));
+    return fetchApi(`/api/game-state?id=${gameId}`, 'GET', null, token);
 }
 async function sendGameUpdate(gameId, action, text) {
-    return fetchApi('/api/game-update', 'POST', { gameId, action, text });
+    const token = getAuthToken();
+    if (!token) return Promise.reject(new Error("User not authenticated. Please sign in."));
+    return fetchApi('/api/game-update', 'POST', { gameId, action, text }, token);
 }
 
 
