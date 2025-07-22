@@ -1,3 +1,4 @@
+
 const { createClient } = require('@supabase/supabase-js');
 
 // These environment variables are set in your Netlify project settings.
@@ -68,7 +69,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Registration successful! Please check your email to confirm your account.', user: data.user }),
+      body: JSON.stringify({ message: 'Registration successful! You can now sign in.', user: data.user }),
     };
 
   } catch (e) {
