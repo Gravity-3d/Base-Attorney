@@ -65,11 +65,26 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({ error: userMessage }),
       };
     }
+    
+    // Check if email confirmation is required. If the session is null, it is.
+    const confirmationPending = data.session === null;
+    let message = '';
+    
+    if (confirmationPending) {
+        // User-friendly message, as requested by the user.
+        message = "Check your email for authentication.";
+    } else {
+        message = 'Registration successful! You can now sign in.';
+    }
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Registration successful! You can now sign in.', user: data.user }),
+      body: JSON.stringify({ 
+          message: message, 
+          user: data.user,
+          confirmationPending: confirmationPending 
+      }),
     };
 
   } catch (e) {
