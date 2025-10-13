@@ -1,8 +1,8 @@
 const { GoogleGenAI } = require("@google/genai");
 
-const API_KEY = "AIzaSyAUmC9UftOENS_Rl-o9_AqPwHPmTuUb2zE";
+const API_KEY = AIzaSyBblZY0obeumRv2NTjp13km1C2Vwc95nXo;
+
 exports.handler = async (event) => {
-  // 1. Stricter method check
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -11,7 +11,6 @@ exports.handler = async (event) => {
     };
   }
   
-  // 2. Stricter body and API key checks
   if (!API_KEY) {
      return {
       statusCode: 500,
@@ -40,19 +39,15 @@ exports.handler = async (event) => {
 
     const ai = new GoogleGenAI({ apiKey: API_KEY });
     
-    // Use the stateless `generateContent` for better reliability in a serverless environment.
-    // Map the client-side history to the format Gemini expects.
     const contents = history.map(item => ({
-        // Prosecutor/Judge are the 'model', Defense is the 'user'
         role: item.speaker === 'Defense' ? 'user' : 'model',
         parts: [{ text: item.text }]
     }));
-    // Add the user's latest prompt to the end of the contents array.
     contents.push({ role: 'user', parts: [{ text: prompt }] });
 
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: contents, // The full conversation history + new prompt
+        contents: contents,
         config: {
             systemInstruction: systemInstruction
         }
@@ -66,7 +61,6 @@ exports.handler = async (event) => {
 
   } catch (error) {
     console.error('AI Handler Error:', error);
-    // Differentiate between JSON parsing errors and other errors
     if (error instanceof SyntaxError) {
         return {
           statusCode: 400,
